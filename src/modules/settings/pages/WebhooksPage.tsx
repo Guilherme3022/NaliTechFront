@@ -75,7 +75,7 @@ function WebhooksTab() {
       {(query.data ?? []).length === 0 ? (
         <EmptyState
           title="Nenhum webhook configurado"
-          description="Crie assinaturas para enviar eventos do LedgerFlow ao n8n e automatizar fluxos."
+          description="Crie assinaturas para enviar eventos do Nalitech ao n8n e automatizar fluxos."
           action={
             <Button variant="contained" startIcon={<AddIcon />} onClick={() => setOpen(true)}>
               Criar assinatura

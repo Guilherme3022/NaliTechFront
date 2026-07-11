@@ -23,7 +23,7 @@ export function AuthShell({
     >
       <Paper sx={{ p: 4, width: '100%', maxWidth: 400 }}>
         <Typography variant="h5" gutterBottom>
-          LedgerFlow
+          Nalitech
         </Typography>
         <Typography variant="h6">{title}</Typography>
         {subtitle && (

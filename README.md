@@ -1,13 +1,13 @@
-# LedgerFlow — Frontend
+# Nalitech — Frontend
 
-Frontend do LedgerFlow (SPA). Consome a API do backend Spring Boot.
+Frontend do Nalitech (SPA). Consome a API do backend Spring Boot.
 
 **Stack:** React + TypeScript (Vite), MUI, TanStack Query, React Router,
 React Hook Form + Zod, Axios.
 
 ## Rodando localmente
 
-Pré-requisito: backend rodando em `http://localhost:8080` (ver `../LedgerFlow/DEPLOY.md`).
+Pré-requisito: backend rodando em `http://localhost:8080` (ver `../Nalitech/DEPLOY.md`).
 
 ```bash
 npm install
@@ -18,7 +18,7 @@ App em http://localhost:5173. O `vite.config.ts` faz proxy de `/api` → `localh
 então não há problema de CORS em desenvolvimento.
 
 Primeiro acesso (admin criado pelo backend na 1ª subida):
-`admin@ledgerflow.local` / `admin123`.
+`admin@nalitech.local` / `admin123`.
 
 ## Scripts
 
@@ -51,7 +51,7 @@ Cada épico (E0–E17) do documento `03-frontend.md` está mapeado em um módulo
 
 ## Deploy
 
-Duas opções (ambas cobertas em `../LedgerFlow/DEPLOY.md`):
+Duas opções (ambas cobertas em `../Nalitech/DEPLOY.md`):
 - **Vercel/Netlify** (build estático, `vercel.json` já incluso).
 - **Docker + nginx** (`Dockerfile` + `nginx.conf`), para Railway/Render.
 

@@ -1,4 +1,4 @@
-s# LedgerFlow — Frontend: tasks de implementação (React + TypeScript)
+s# Nalitech — Frontend: tasks de implementação (React + TypeScript)
 
 Este documento é para a IA implementar. Cobre **todas as telas do sistema completo**,
 organizadas para acompanhar os épicos do documento de backend. Cada épico tem: telas,

@@ -77,7 +77,7 @@ export function AppLayout() {
     <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
       <Toolbar sx={{ px: 2 }}>
         <Typography variant="h6" color="primary" fontWeight={700}>
-          LedgerFlow
+          Nalitech
         </Typography>
       </Toolbar>
       <Divider />

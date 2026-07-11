@@ -1,7 +1,7 @@
 // Armazenamento simples dos tokens JWT. Centralizado para o interceptor do
 // Axios e o AuthContext lerem/gravarem do mesmo lugar.
-const ACCESS_KEY = 'ledgerflow.accessToken';
-const REFRESH_KEY = 'ledgerflow.refreshToken';
+const ACCESS_KEY = 'nalitech.accessToken';
+const REFRESH_KEY = 'nalitech.refreshToken';
 
 export const tokenStorage = {
   getAccess: () => localStorage.getItem(ACCESS_KEY),

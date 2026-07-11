@@ -13,7 +13,7 @@ export function PortalLayout() {
       <AppBar position="static" color="inherit" sx={{ borderBottom: '1px solid #e4e7eb', boxShadow: 'none' }}>
         <Toolbar>
           <Typography variant="h6" color="primary" sx={{ flex: 1 }}>
-            LedgerFlow
+            Nalitech
           </Typography>
           <Avatar sx={{ width: 32, height: 32, mr: 1, bgcolor: 'secondary.main' }}>
             {user?.name?.charAt(0).toUpperCase()}
