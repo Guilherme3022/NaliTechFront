@@ -1,7 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Button,
   Dialog,
@@ -13,6 +13,7 @@ import {
 } from '@mui/material';
 import { useCreateChartAccountMutation, useUpdateChartAccountMutation } from '../hooks';
 import type { ChartAccountResponse } from '../types';
+import { ClientScopeSelect } from './ClientScopeSelect';
 
 const schema = z.object({
   codigo: z.string().min(1, 'Informe o código'),
@@ -33,6 +34,8 @@ export function ChartAccountFormDialog({ open, account, parentId, onClose }: Pro
   const create = useCreateChartAccountMutation();
   const update = useUpdateChartAccountMutation();
 
+  const [clienteId, setClienteId] = useState<string | null>(null);
+
   const { register, handleSubmit, reset, formState: { errors } } = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: { codigo: '', nome: '', tipo: '' },
@@ -41,11 +44,12 @@ export function ChartAccountFormDialog({ open, account, parentId, onClose }: Pro
   useEffect(() => {
     if (open) {
       reset({ codigo: account?.codigo ?? '', nome: account?.nome ?? '', tipo: account?.tipo ?? '' });
+      setClienteId(account?.clienteId ?? null);
     }
   }, [open, account, reset]);
 
   const onSubmit = handleSubmit(async (values) => {
-    const body = { ...values, parentId: account?.parentId ?? parentId ?? null };
+    const body = { ...values, parentId: account?.parentId ?? parentId ?? null, clienteId };
     if (isEdit && account) {
       await update.mutateAsync({ id: account.id, body });
     } else {
@@ -77,6 +81,7 @@ export function ChartAccountFormDialog({ open, account, parentId, onClose }: Pro
               {...register('nome')}
             />
             <TextField label="Tipo (ex: RECEITA, DESPESA)" fullWidth {...register('tipo')} />
+            <ClientScopeSelect value={clienteId} onChange={setClienteId} />
           </Stack>
         </DialogContent>
         <DialogActions>

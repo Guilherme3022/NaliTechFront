@@ -1,7 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Controller, useForm } from 'react-hook-form';
 import { z } from 'zod';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Button,
   Dialog,
@@ -18,6 +18,9 @@ import {
   TextField,
 } from '@mui/material';
 import { AccountSelect } from './AccountSelect';
+import { ClientScopeSelect } from './ClientScopeSelect';
+import { CostCenterSelect } from './CostCenterSelect';
+import { BranchSelect } from './BranchSelect';
 import { useCreateAccountRuleMutation } from '../hooks';
 
 // Condição: descrição contém X e/ou valor OP ref → ação: conta / marcar revisão.
@@ -37,6 +40,9 @@ const OPERADORES = ['>', '>=', '<', '<=', '='];
 
 export function AccountRuleFormDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
   const create = useCreateAccountRuleMutation();
+  const [clienteId, setClienteId] = useState<string | null>(null);
+  const [centroCustoId, setCentroCustoId] = useState<string | null>(null);
+  const [filialId, setFilialId] = useState<string | null>(null);
   const { register, handleSubmit, control, reset, formState: { errors } } = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: {
@@ -52,7 +58,12 @@ export function AccountRuleFormDialog({ open, onClose }: { open: boolean; onClos
   });
 
   useEffect(() => {
-    if (open) reset();
+    if (open) {
+      reset();
+      setClienteId(null);
+      setCentroCustoId(null);
+      setFilialId(null);
+    }
   }, [open, reset]);
 
   const onSubmit = handleSubmit(async (values) => {
@@ -65,6 +76,9 @@ export function AccountRuleFormDialog({ open, onClose }: { open: boolean; onClos
       marcarRevisao: values.marcarRevisao,
       prioridade: Number(values.prioridade) || 0,
       ativo: values.ativo,
+      clienteId,
+      centroCustoId,
+      filialId,
     });
     onClose();
   });
@@ -116,6 +130,9 @@ export function AccountRuleFormDialog({ open, onClose }: { open: boolean; onClos
               )}
             />
             <TextField label="Prioridade" type="number" fullWidth {...register('prioridade')} />
+            <ClientScopeSelect value={clienteId} onChange={setClienteId} />
+            <CostCenterSelect value={centroCustoId} onChange={setCentroCustoId} />
+            <BranchSelect value={filialId} onChange={setFilialId} />
             <Controller
               name="marcarRevisao"
               control={control}
