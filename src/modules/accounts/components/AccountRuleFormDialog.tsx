@@ -27,6 +27,9 @@ import { useCreateAccountRuleMutation } from '../hooks';
 const schema = z.object({
   nome: z.string().min(1, 'Informe o nome da regra'),
   descricaoContains: z.string().optional(),
+  tipoMovimento: z.string().optional(),
+  bancoContains: z.string().optional(),
+  documentoContains: z.string().optional(),
   valorOperador: z.string().optional(),
   valorRef: z.string().optional(),
   contaId: z.string().nullable().optional(),
@@ -48,6 +51,9 @@ export function AccountRuleFormDialog({ open, onClose }: { open: boolean; onClos
     defaultValues: {
       nome: '',
       descricaoContains: '',
+      tipoMovimento: '',
+      bancoContains: '',
+      documentoContains: '',
       valorOperador: '',
       valorRef: '',
       contaId: null,
@@ -70,6 +76,9 @@ export function AccountRuleFormDialog({ open, onClose }: { open: boolean; onClos
     await create.mutateAsync({
       nome: values.nome,
       descricaoContains: values.descricaoContains || undefined,
+      tipoMovimento: values.tipoMovimento || undefined,
+      bancoContains: values.bancoContains || undefined,
+      documentoContains: values.documentoContains || undefined,
       valorOperador: values.valorOperador || undefined,
       valorRef: values.valorRef ? Number(values.valorRef) : null,
       contaId: values.contaId ?? null,
@@ -101,6 +110,29 @@ export function AccountRuleFormDialog({ open, onClose }: { open: boolean; onClos
               fullWidth
               placeholder="ex: TARIFA, PIX, SALARIO"
               {...register('descricaoContains')}
+            />
+            <Stack direction="row" spacing={2}>
+              <Controller
+                name="tipoMovimento"
+                control={control}
+                render={({ field }) => (
+                  <FormControl sx={{ minWidth: 160 }}>
+                    <InputLabel>Tipo</InputLabel>
+                    <Select label="Tipo" {...field}>
+                      <MenuItem value="">Qualquer</MenuItem>
+                      <MenuItem value="ENTRADA">Entrada</MenuItem>
+                      <MenuItem value="SAIDA">Saída</MenuItem>
+                    </Select>
+                  </FormControl>
+                )}
+              />
+              <TextField label="Banco contém" fullWidth {...register('bancoContains')} />
+            </Stack>
+            <TextField
+              label="Documento / código contém"
+              fullWidth
+              placeholder="ex: número do documento"
+              {...register('documentoContains')}
             />
             <Stack direction="row" spacing={2}>
               <Controller

@@ -30,6 +30,9 @@ export interface AccountRuleResponse {
   clienteId: string | null;
   centroCustoId: string | null;
   filialId: string | null;
+  tipoMovimento: string | null;
+  bancoContains: string | null;
+  documentoContains: string | null;
 }
 
 export interface AccountRuleRequest {
@@ -44,6 +47,9 @@ export interface AccountRuleRequest {
   clienteId?: string | null;
   centroCustoId?: string | null;
   filialId?: string | null;
+  tipoMovimento?: string | null;
+  bancoContains?: string | null;
+  documentoContains?: string | null;
 }
 
 // Increment 4 — Centro de custo.
@@ -76,6 +82,34 @@ export interface BranchRequest {
   codigo: string;
   nome: string;
   cnpj?: string | null;
+  ativo: boolean;
+  clienteId?: string | null;
+}
+
+// Increment 7 — Contratos de financiamento/empréstimo.
+export interface LoanContractResponse {
+  id: string;
+  descricao: string;
+  valorTotal: number | null;
+  taxaJuros: number | null;
+  parcelas: number | null;
+  contaPrincipalId: string | null;
+  contaJurosId: string | null;
+  contaEncargosId: string | null;
+  classificacaoPrazo: string | null;
+  ativo: boolean;
+  clienteId: string | null;
+}
+
+export interface LoanContractRequest {
+  descricao: string;
+  valorTotal?: number | null;
+  taxaJuros?: number | null;
+  parcelas?: number | null;
+  contaPrincipalId?: string | null;
+  contaJurosId?: string | null;
+  contaEncargosId?: string | null;
+  classificacaoPrazo?: string | null;
   ativo: boolean;
   clienteId?: string | null;
 }

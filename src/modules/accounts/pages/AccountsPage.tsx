@@ -18,6 +18,8 @@ import {
   useDeleteBranchMutation,
   useDeleteChartAccountMutation,
   useDeleteCostCenterMutation,
+  useDeleteLoanContractMutation,
+  useLoanContractsQuery,
   useParametrizationRequestsQuery,
 } from '../hooks';
 import { ChartAccountFormDialog } from '../components/ChartAccountFormDialog';
@@ -25,6 +27,7 @@ import { AccountRuleFormDialog } from '../components/AccountRuleFormDialog';
 import { BankAccountFormDialog } from '../components/BankAccountFormDialog';
 import { CostCenterFormDialog } from '../components/CostCenterFormDialog';
 import { BranchFormDialog } from '../components/BranchFormDialog';
+import { LoanContractFormDialog } from '../components/LoanContractFormDialog';
 import { ApplyParametrizationDialog } from '../components/ApplyParametrizationDialog';
 import type {
   AccountRuleResponse,
@@ -32,6 +35,7 @@ import type {
   BranchResponse,
   ChartAccountResponse,
   CostCenterResponse,
+  LoanContractResponse,
   ParametrizationRequest,
 } from '../types';
 
@@ -51,6 +55,7 @@ export function AccountsPage() {
           <Tab label="Contas bancárias" />
           <Tab label="Centros de custo" />
           <Tab label="Filiais" />
+          <Tab label="Financiamentos" />
         </Tabs>
       </Box>
       {tab === 0 && <ChartTab />}
@@ -59,6 +64,86 @@ export function AccountsPage() {
       {tab === 3 && <BankAccountsTab />}
       {tab === 4 && <CostCentersTab />}
       {tab === 5 && <BranchesTab />}
+      {tab === 6 && <LoanContractsTab />}
+    </>
+  );
+}
+
+function LoanContractsTab() {
+  const query = useLoanContractsQuery();
+  const del = useDeleteLoanContractMutation();
+  const [editing, setEditing] = useState<LoanContractResponse | null>(null);
+  const [open, setOpen] = useState(false);
+  const [toDelete, setToDelete] = useState<LoanContractResponse | null>(null);
+
+  const columns: Column<LoanContractResponse>[] = [
+    { key: 'descricao', label: 'Descrição' },
+    {
+      key: 'valorTotal',
+      label: 'Valor total',
+      align: 'right',
+      render: (c) => (c.valorTotal != null ? brl(c.valorTotal) : '—'),
+    },
+    { key: 'parcelas', label: 'Parcelas', align: 'right', render: (c) => c.parcelas ?? '—' },
+    {
+      key: 'classificacaoPrazo',
+      label: 'Prazo',
+      render: (c) =>
+        c.classificacaoPrazo === 'CURTO'
+          ? 'Curto'
+          : c.classificacaoPrazo === 'LONGO'
+            ? 'Longo'
+            : '—',
+    },
+    {
+      key: 'actions',
+      label: '',
+      align: 'right',
+      render: (c) => (
+        <>
+          <IconButton size="small" onClick={() => { setEditing(c); setOpen(true); }}>
+            <EditIcon fontSize="small" />
+          </IconButton>
+          <IconButton size="small" onClick={() => setToDelete(c)}>
+            <DeleteIcon fontSize="small" />
+          </IconButton>
+        </>
+      ),
+    },
+  ];
+
+  return (
+    <>
+      <Box sx={{ mb: 2, textAlign: 'right' }}>
+        <Button variant="contained" startIcon={<AddIcon />} onClick={() => { setEditing(null); setOpen(true); }}>
+          Novo contrato
+        </Button>
+      </Box>
+      <Card variant="outlined" sx={{ p: 0 }}>
+        <DataTable
+          columns={columns}
+          rows={query.data ?? []}
+          rowKey={(c) => c.id}
+          loading={query.isLoading}
+          error={query.isError}
+          onRetry={query.refetch}
+          emptyMessage="Nenhum contrato de financiamento cadastrado."
+        />
+      </Card>
+      <LoanContractFormDialog open={open} contract={editing} onClose={() => setOpen(false)} />
+      <ConfirmDialog
+        open={!!toDelete}
+        title="Remover contrato"
+        message={`Remover "${toDelete?.descricao}"?`}
+        confirmLabel="Remover"
+        confirmColor="error"
+        loading={del.isPending}
+        onClose={() => setToDelete(null)}
+        onConfirm={async () => {
+          if (toDelete) await del.mutateAsync(toDelete.id);
+          setToDelete(null);
+        }}
+      />
     </>
   );
 }

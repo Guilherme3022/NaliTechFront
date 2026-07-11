@@ -17,3 +17,23 @@ export interface ActivityItem {
 export interface DashboardActivity {
   recentes: ActivityItem[];
 }
+
+// Increment 8 — visão operacional + carteira.
+export interface OperationSummary {
+  clientesAtivos: number;
+  conciliacoesPendentes: number;
+  aguardandoClassificacao: number;
+  uploadsProcessando: number;
+  uploadsComErro: number;
+}
+
+export interface PortfolioItem {
+  clienteId: string;
+  nome: string;
+  pendentesConciliacao: number;
+  aguardandoClassificacao: number;
+}
+
+export interface DashboardPortfolio {
+  clientes: PortfolioItem[];
+}

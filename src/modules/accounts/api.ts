@@ -13,6 +13,8 @@ import type {
   ChartAccountResponse,
   CostCenterRequest,
   CostCenterResponse,
+  LoanContractRequest,
+  LoanContractResponse,
   ManualEntryRequest,
   ParametrizationRequest,
   SuggestionResponse,
@@ -74,4 +76,14 @@ export const accountsApi = {
   deleteBranch: (id: string) => api.delete(`/branches/${id}`),
   setBranch: (movementId: string, filialId: string | null) =>
     api.post(`/movements/${movementId}/branch`, { filialId }),
+
+  // Increment 7 — Contratos de financiamento.
+  loanContracts: () => api.get<LoanContractResponse[]>('/loan-contracts').then((r) => r.data),
+  createLoanContract: (body: LoanContractRequest) =>
+    api.post<LoanContractResponse>('/loan-contracts', body).then((r) => r.data),
+  updateLoanContract: (id: string, body: LoanContractRequest) =>
+    api.put<LoanContractResponse>(`/loan-contracts/${id}`, body).then((r) => r.data),
+  deleteLoanContract: (id: string) => api.delete(`/loan-contracts/${id}`),
+  setLoanContract: (movementId: string, loanContractId: string | null) =>
+    api.post(`/movements/${movementId}/loan-contract`, { loanContractId }),
 };

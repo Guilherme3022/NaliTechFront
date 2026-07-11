@@ -1,14 +1,19 @@
 import { useState } from 'react';
 import {
+  Alert,
+  AlertTitle,
   Button,
   Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
+  List,
+  ListItem,
+  ListItemText,
   Stack,
   TextField,
 } from '@mui/material';
-import { useExportLayoutMutation } from '../hooks';
+import { useExportLayoutMutation, useExportValidationQuery } from '../hooks';
 
 // Modal de configuração antes de exportar (E10.2): período.
 export function ExportConfigModal({
@@ -23,6 +28,7 @@ export function ExportConfigModal({
   const [inicio, setInicio] = useState(firstDay);
   const [fim, setFim] = useState(today);
   const exportMutation = useExportLayoutMutation();
+  const validation = useExportValidationQuery(inicio, fim, !!sistema);
 
   return (
     <Dialog open={!!sistema} onClose={onClose} maxWidth="xs" fullWidth>
@@ -45,6 +51,26 @@ export function ExportConfigModal({
             InputLabelProps={{ shrink: true }}
             fullWidth
           />
+
+          {validation.data && validation.data.comProblema > 0 && (
+            <Alert severity="warning">
+              <AlertTitle>
+                {validation.data.comProblema} de {validation.data.total} lançamento(s) com pendência
+              </AlertTitle>
+              <List dense disablePadding sx={{ maxHeight: 160, overflow: 'auto' }}>
+                {validation.data.problemas.slice(0, 10).map((p) => (
+                  <ListItem key={p.movementId} disableGutters>
+                    <ListItemText primary={p.descricao ?? '—'} secondary={p.motivo} />
+                  </ListItem>
+                ))}
+              </List>
+            </Alert>
+          )}
+          {validation.data && validation.data.comProblema === 0 && validation.data.total > 0 && (
+            <Alert severity="success">
+              {validation.data.total} lançamento(s) prontos para exportar.
+            </Alert>
+          )}
         </Stack>
       </DialogContent>
       <DialogActions>

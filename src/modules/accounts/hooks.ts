@@ -9,6 +9,7 @@ import type {
   BranchRequest,
   ChartAccountRequest,
   CostCenterRequest,
+  LoanContractRequest,
 } from './types';
 
 const CHART = 'chart-of-accounts';
@@ -17,6 +18,7 @@ const PARAMETRIZATION = 'parametrization-requests';
 const BANK_ACCOUNTS = 'bank-accounts';
 const COST_CENTERS = 'cost-centers';
 const BRANCHES = 'branches';
+const LOANS = 'loan-contracts';
 
 // E9.5 — hooks de plano de contas e regras.
 export function useChartOfAccountsQuery(params: PageParams) {
@@ -238,6 +240,45 @@ export function useDeleteBranchMutation() {
     onSuccess: () => {
       notifySuccess('Filial removida.');
       qc.invalidateQueries({ queryKey: [BRANCHES] });
+    },
+  });
+}
+
+// Increment 7 — Contratos de financiamento.
+export function useLoanContractsQuery() {
+  return useQuery({ queryKey: [LOANS], queryFn: accountsApi.loanContracts });
+}
+
+export function useCreateLoanContractMutation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (body: LoanContractRequest) => accountsApi.createLoanContract(body),
+    onSuccess: () => {
+      notifySuccess('Contrato criado.');
+      qc.invalidateQueries({ queryKey: [LOANS] });
+    },
+  });
+}
+
+export function useUpdateLoanContractMutation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, body }: { id: string; body: LoanContractRequest }) =>
+      accountsApi.updateLoanContract(id, body),
+    onSuccess: () => {
+      notifySuccess('Contrato atualizado.');
+      qc.invalidateQueries({ queryKey: [LOANS] });
+    },
+  });
+}
+
+export function useDeleteLoanContractMutation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => accountsApi.deleteLoanContract(id),
+    onSuccess: () => {
+      notifySuccess('Contrato removido.');
+      qc.invalidateQueries({ queryKey: [LOANS] });
     },
   });
 }

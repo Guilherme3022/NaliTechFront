@@ -9,3 +9,12 @@ export function useDashboardSummaryQuery() {
 export function useDashboardActivityQuery() {
   return useQuery({ queryKey: ['dashboard', 'activity'], queryFn: dashboardApi.activity });
 }
+
+// Increment 8 — visão operacional + carteira.
+export function useDashboardOperationQuery() {
+  return useQuery({ queryKey: ['dashboard', 'operation'], queryFn: dashboardApi.operation });
+}
+
+export function useDashboardPortfolioQuery() {
+  return useQuery({ queryKey: ['dashboard', 'portfolio'], queryFn: dashboardApi.portfolio });
+}

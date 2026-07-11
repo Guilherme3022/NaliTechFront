@@ -13,6 +13,15 @@ export function useExportHistoryQuery(params: PageParams) {
   return useQuery({ queryKey: ['layouts', 'history', params], queryFn: () => exportsApi.history(params) });
 }
 
+// Increment 6 — validação pré-export para o período selecionado.
+export function useExportValidationQuery(inicio: string, fim: string, enabled: boolean) {
+  return useQuery({
+    queryKey: ['layouts', 'validation', inicio, fim],
+    queryFn: () => exportsApi.validate(inicio, fim),
+    enabled,
+  });
+}
+
 export function useExportLayoutMutation() {
   const qc = useQueryClient();
   return useMutation({

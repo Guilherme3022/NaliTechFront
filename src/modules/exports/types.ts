@@ -13,3 +13,18 @@ export interface ExportParams {
   inicio: string; // yyyy-MM-dd
   fim: string;
 }
+
+// Increment 6 — validação pré-export.
+export interface ExportIssue {
+  movementId: string;
+  data: string | null;
+  valor: number | null;
+  descricao: string | null;
+  motivo: string;
+}
+
+export interface ExportValidationReport {
+  total: number;
+  comProblema: number;
+  problemas: ExportIssue[];
+}

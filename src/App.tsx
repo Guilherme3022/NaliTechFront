@@ -11,6 +11,7 @@ import { UploadsPage } from '@/modules/uploads/pages/UploadsPage';
 import { UploadDetailPage } from '@/modules/uploads/pages/UploadDetailPage';
 import { ReconciliationPage } from '@/modules/reconciliation/pages/ReconciliationPage';
 import { AccountsPage } from '@/modules/accounts/pages/AccountsPage';
+import { ImportLayoutsPage } from '@/modules/importLayouts/pages/ImportLayoutsPage';
 import { ExportsPage } from '@/modules/exports/pages/ExportsPage';
 import { FinancePage } from '@/modules/finance/pages/FinancePage';
 import { InvoiceDetailPage } from '@/modules/finance/pages/InvoiceDetailPage';
@@ -52,6 +53,7 @@ export function App() {
 
           <Route path="/reconciliation" element={<ReconciliationPage />} />
           <Route path="/accounts" element={<AccountsPage />} />
+          <Route path="/import-layouts" element={<ImportLayoutsPage />} />
 
           <Route path="/finance" element={<FinancePage />} />
           <Route path="/finance/invoices/:id" element={<InvoiceDetailPage />} />
