@@ -51,6 +51,18 @@ export function useUploadDetailQuery(id: string | undefined) {
   });
 }
 
+export function useSubstituteUploadMutation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, file, justificativa }: { id: string; file: File; justificativa?: string }) =>
+      uploadsApi.substitute(id, file, justificativa),
+    onSuccess: () => {
+      notifySuccess('Arquivo substituído (nova versão).');
+      qc.invalidateQueries({ queryKey: [KEY] });
+    },
+  });
+}
+
 export function useDeleteUploadMutation() {
   const qc = useQueryClient();
   return useMutation({

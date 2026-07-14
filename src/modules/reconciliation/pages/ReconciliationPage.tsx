@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import {
+  Alert,
   Box,
   Button,
   Card,
@@ -8,6 +9,7 @@ import {
   Tab,
   Tabs,
 } from '@mui/material';
+import { useAllAccountsQuery } from '@/modules/accounts/hooks';
 import CheckIcon from '@mui/icons-material/Check';
 import CloseIcon from '@mui/icons-material/Close';
 import { PageHeader } from '@/shared/components/PageHeader';
@@ -24,11 +26,20 @@ import {
 import { ReconciliationSplitView } from '../components/ReconciliationSplitView';
 import { ManualMatchModal } from '../components/ManualMatchModal';
 import { MatchStatusBadge } from '../components/MatchStatusBadge';
+import { ConciliacaoCards } from '../components/ConciliacaoCards';
 import type { ReconciliationResponse } from '../types';
 
 export function ReconciliationPage() {
   const [tab, setTab] = useState(0);
   const clienteId = useActiveClient();
+  const accountsQuery = useAllAccountsQuery();
+  // EB: cliente tem plano se houver conta especifica dele ou compartilhada (clienteId nulo).
+  const semPlano =
+    !!clienteId &&
+    accountsQuery.isSuccess &&
+    !(accountsQuery.data?.content ?? []).some(
+      (a) => a.clienteId === clienteId || a.clienteId === null,
+    );
   return (
     <>
       <PageHeader title="Conciliação" subtitle="Extrato x sistema" />
@@ -39,6 +50,13 @@ export function ReconciliationPage() {
         />
       ) : (
         <>
+          {semPlano && (
+            <Alert severity="warning" sx={{ mb: 2 }}>
+              Não foi identificado um plano de contas ativo para este cliente. Configure ou
+              vincule um plano de contas antes de iniciar a conciliação.
+            </Alert>
+          )}
+          <ConciliacaoCards />
           <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 2 }}>
             <Tabs value={tab} onChange={(_, v) => setTab(v)}>
               <Tab label="Pendentes" />

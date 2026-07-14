@@ -22,6 +22,8 @@ import PeopleIcon from '@mui/icons-material/People';
 import UploadFileIcon from '@mui/icons-material/UploadFile';
 import CompareArrowsIcon from '@mui/icons-material/CompareArrows';
 import AccountTreeIcon from '@mui/icons-material/AccountTree';
+import TuneIcon from '@mui/icons-material/Tune';
+import LibraryBooksIcon from '@mui/icons-material/LibraryBooks';
 import ViewColumnIcon from '@mui/icons-material/ViewColumn';
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import PaidIcon from '@mui/icons-material/Paid';
@@ -52,6 +54,8 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'Uploads', to: '/uploads', icon: <UploadFileIcon /> },
   { label: 'Conciliação', to: '/reconciliation', icon: <CompareArrowsIcon /> },
   { label: 'Plano de contas', to: '/accounts', icon: <AccountTreeIcon /> },
+  { label: 'Perfis de conciliação', to: '/reconciliation-profiles', icon: <TuneIcon />, roles: ['ADMIN', 'CONTADOR'] },
+  { label: 'Planos-modelo', to: '/plano-modelos', icon: <LibraryBooksIcon />, roles: ['ADMIN', 'CONTADOR'] },
   { label: 'Layouts de importação', to: '/import-layouts', icon: <ViewColumnIcon />, roles: ['ADMIN', 'CONTADOR'] },
   { label: 'Exportação', to: '/exports', icon: <FileDownloadIcon />, roles: ['ADMIN', 'CONTADOR'] },
   { label: 'Financeiro', to: '/finance', icon: <PaidIcon /> },

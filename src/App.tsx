@@ -10,6 +10,9 @@ import { ClientDetailPage } from '@/modules/clients/pages/ClientDetailPage';
 import { UploadsPage } from '@/modules/uploads/pages/UploadsPage';
 import { UploadDetailPage } from '@/modules/uploads/pages/UploadDetailPage';
 import { ReconciliationPage } from '@/modules/reconciliation/pages/ReconciliationPage';
+import { ConciliacaoDetailPage } from '@/modules/reconciliation/pages/ConciliacaoDetailPage';
+import { ReconciliationProfilesPage } from '@/modules/reconciliation/pages/ReconciliationProfilesPage';
+import { PlanoModelosPage } from '@/modules/planoModelos/pages/PlanoModelosPage';
 import { AccountsPage } from '@/modules/accounts/pages/AccountsPage';
 import { ImportLayoutsPage } from '@/modules/importLayouts/pages/ImportLayoutsPage';
 import { ExportsPage } from '@/modules/exports/pages/ExportsPage';
@@ -52,8 +55,14 @@ export function App() {
           <Route path="/uploads/:id" element={<UploadDetailPage />} />
 
           <Route path="/reconciliation" element={<ReconciliationPage />} />
+          <Route path="/reconciliation/:id" element={<ConciliacaoDetailPage />} />
           <Route path="/accounts" element={<AccountsPage />} />
           <Route path="/import-layouts" element={<ImportLayoutsPage />} />
+
+          <Route element={<RequireRole roles={['ADMIN', 'CONTADOR']} />}>
+            <Route path="/reconciliation-profiles" element={<ReconciliationProfilesPage />} />
+            <Route path="/plano-modelos" element={<PlanoModelosPage />} />
+          </Route>
 
           <Route path="/finance" element={<FinancePage />} />
           <Route path="/finance/invoices/:id" element={<InvoiceDetailPage />} />
@@ -64,12 +73,12 @@ export function App() {
           {/* Rotas restritas por perfil */}
           <Route element={<RequireRole roles={['ADMIN', 'CONTADOR']} />}>
             <Route path="/exports" element={<ExportsPage />} />
-            <Route path="/company" element={<CompanyPage />} />
-            <Route path="/settings/webhooks" element={<SettingsPage />} />
-            <Route path="/settings/api-keys" element={<SettingsPage />} />
           </Route>
 
           <Route element={<RequireRole roles={['ADMIN']} />}>
+            <Route path="/company" element={<CompanyPage />} />
+            <Route path="/settings/webhooks" element={<SettingsPage />} />
+            <Route path="/settings/api-keys" element={<SettingsPage />} />
             <Route path="/users" element={<UsersPage />} />
             <Route path="/audit" element={<AuditPage />} />
           </Route>

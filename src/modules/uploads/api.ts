@@ -7,6 +7,16 @@ export const uploadsApi = {
     api.get<Page<UploadResponse>>('/uploads', { params }).then((r) => r.data),
   getById: (id: string) => api.get<UploadResponse>(`/uploads/${id}`).then((r) => r.data),
   remove: (id: string) => api.delete(`/uploads/${id}`),
+  substitute: (id: string, file: File, justificativa?: string) => {
+    const form = new FormData();
+    form.append('file', file);
+    if (justificativa) form.append('justificativa', justificativa);
+    return api
+      .post<UploadResponse>(`/uploads/${id}/substituir`, form, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      })
+      .then((r) => r.data);
+  },
   upload: (file: File, clienteId?: string, onProgress?: (pct: number) => void) => {
     const form = new FormData();
     form.append('file', file);
