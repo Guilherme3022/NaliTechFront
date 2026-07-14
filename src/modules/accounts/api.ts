@@ -28,6 +28,16 @@ export const accountsApi = {
   updateChart: (id: string, body: ChartAccountRequest) =>
     api.put<ChartAccountResponse>(`/chart-of-accounts/${id}`, body).then((r) => r.data),
   deleteChart: (id: string) => api.delete(`/chart-of-accounts/${id}`),
+  importChart: (file: File, clienteId: string) => {
+    const form = new FormData();
+    form.append('file', file);
+    form.append('clienteId', clienteId);
+    return api
+      .post<{ contasCriadas: number; contasIgnoradas: number }>('/chart-of-accounts/import', form, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      })
+      .then((r) => r.data);
+  },
 
   rules: () => api.get<AccountRuleResponse[]>('/account-rules').then((r) => r.data),
   createRule: (body: AccountRuleRequest) =>

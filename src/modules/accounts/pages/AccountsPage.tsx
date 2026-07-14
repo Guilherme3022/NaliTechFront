@@ -1,10 +1,13 @@
-import { useState } from 'react';
-import { Box, Button, Card, Chip, IconButton, Tab, Tabs, Tooltip, Typography } from '@mui/material';
+import { useRef, useState, type ChangeEvent } from 'react';
+import { Box, Button, Card, Chip, IconButton, Stack, Tab, Tabs, Tooltip, Typography } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
+import UploadFileIcon from '@mui/icons-material/UploadFile';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { PageHeader } from '@/shared/components/PageHeader';
 import { DataTable, type Column } from '@/shared/components/DataTable';
+import { notifyError } from '@/shared/lib/notify';
+import { useActiveClient } from '@/shared/lib/activeSelection';
 import { ConfirmDialog } from '@/shared/components/ConfirmDialog';
 import { usePagination } from '@/shared/hooks/usePagination';
 import {
@@ -19,6 +22,7 @@ import {
   useDeleteChartAccountMutation,
   useDeleteCostCenterMutation,
   useDeleteLoanContractMutation,
+  useImportChartMutation,
   useLoanContractsQuery,
   useParametrizationRequestsQuery,
 } from '../hooks';
@@ -44,9 +48,36 @@ const brl = (v: number) =>
 
 export function AccountsPage() {
   const [tab, setTab] = useState(0);
+  const clienteId = useActiveClient();
+  const importChart = useImportChartMutation();
+  const fileRef = useRef<HTMLInputElement | null>(null);
+
+  const handleImport = (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file && clienteId) {
+      importChart.mutate({ file, clienteId });
+    }
+    e.target.value = '';
+  };
+
   return (
     <>
       <PageHeader title="Plano de contas" subtitle="Estrutura contábil e regras de classificação" />
+      <Stack direction="row" justifyContent="flex-end" sx={{ mb: 2 }}>
+        <input type="file" hidden ref={fileRef} accept=".csv,.xlsx,.xls" onChange={handleImport} />
+        <Button
+          variant="outlined"
+          startIcon={<UploadFileIcon />}
+          disabled={importChart.isPending}
+          onClick={() =>
+            clienteId
+              ? fileRef.current?.click()
+              : notifyError('Selecione um cliente no topo antes de importar.')
+          }
+        >
+          Importar plano (Excel/CSV)
+        </Button>
+      </Stack>
       <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 2 }}>
         <Tabs value={tab} onChange={(_, v) => setTab(v)}>
           <Tab label="Contas" />

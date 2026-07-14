@@ -39,6 +39,7 @@ export interface ConciliacaoResponse {
 export interface CreateConciliacaoRequest {
   clienteId: string;
   competencia: string; // YYYY-MM
+  perfilId?: string | null;
 }
 
 // Perfil de Conciliacao (spec secao 8).

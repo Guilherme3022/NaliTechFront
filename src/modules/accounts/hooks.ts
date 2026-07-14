@@ -25,6 +25,18 @@ export function useChartOfAccountsQuery(params: PageParams) {
   return useQuery({ queryKey: [CHART, params], queryFn: () => accountsApi.chart(params) });
 }
 
+export function useImportChartMutation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ file, clienteId }: { file: File; clienteId: string }) =>
+      accountsApi.importChart(file, clienteId),
+    onSuccess: (res) => {
+      notifySuccess(`Importado: ${res.contasCriadas} conta(s) criada(s), ${res.contasIgnoradas} ignorada(s).`);
+      qc.invalidateQueries({ queryKey: [CHART] });
+    },
+  });
+}
+
 // Lista todas as contas (para selects), buscando um page grande.
 export function useAllAccountsQuery() {
   return useQuery({

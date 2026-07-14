@@ -1,5 +1,18 @@
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Box, Button, Card, CardContent, Chip, Stack, Typography } from '@mui/material';
+import {
+  Box,
+  Button,
+  Card,
+  CardContent,
+  Chip,
+  FormControl,
+  InputLabel,
+  MenuItem,
+  Select,
+  Stack,
+  Typography,
+} from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import DownloadIcon from '@mui/icons-material/Download';
 import { notifyError } from '@/shared/lib/notify';
@@ -10,6 +23,7 @@ import {
   useConciliacoesQuery,
   useConcluirConciliacaoMutation,
   useCreateConciliacaoMutation,
+  useProfilesQuery,
 } from '../hooks';
 import type { ConciliacaoResponse, ConciliacaoSituacao } from '../types';
 
@@ -69,12 +83,16 @@ export function ConciliacaoCards() {
     }
   };
 
+  const profiles = useProfilesQuery(clienteId).data ?? [];
+  const [perfilId, setPerfilId] = useState('');
+
   const handleCreate = () => {
     if (!clienteId || !competencia) return;
-    create.mutate({ clienteId, competencia });
+    create.mutate({ clienteId, competencia, perfilId: perfilId || undefined });
   };
 
   const items = query.data ?? [];
+  const perfilNome = (id: string | null) => profiles.find((p) => p.id === id)?.nome;
 
   return (
     <Box sx={{ mb: 3 }}>
@@ -82,15 +100,37 @@ export function ConciliacaoCards() {
         <Typography variant="subtitle1" fontWeight={700}>
           Conciliações do cliente
         </Typography>
-        <Button
-          size="small"
-          variant="contained"
-          startIcon={<AddIcon />}
-          disabled={!podeCriar || create.isPending}
-          onClick={handleCreate}
-        >
-          Nova conciliação
-        </Button>
+        <Stack direction="row" spacing={1} alignItems="center">
+          {profiles.length > 0 && (
+            <FormControl size="small" sx={{ minWidth: 200 }}>
+              <InputLabel id="perfil-nova-label">Perfil</InputLabel>
+              <Select
+                labelId="perfil-nova-label"
+                label="Perfil"
+                value={perfilId}
+                onChange={(e) => setPerfilId(e.target.value)}
+              >
+                <MenuItem value="">
+                  <em>Sem perfil</em>
+                </MenuItem>
+                {profiles.map((p) => (
+                  <MenuItem key={p.id} value={p.id}>
+                    {p.nome}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          )}
+          <Button
+            size="small"
+            variant="contained"
+            startIcon={<AddIcon />}
+            disabled={!podeCriar || create.isPending}
+            onClick={handleCreate}
+          >
+            Nova conciliação
+          </Button>
+        </Stack>
       </Stack>
 
       {!competencia && (
@@ -112,9 +152,14 @@ export function ConciliacaoCards() {
                   <Typography variant="h6">{formatCompetencia(c.competencia)}</Typography>
                   <Chip size="small" label={SITUACAO_LABEL[c.situacao]} color={SITUACAO_COLOR[c.situacao]} />
                 </Stack>
-                <Typography variant="caption" color="text.secondary">
+                <Typography variant="caption" color="text.secondary" display="block">
                   Conciliação {c.id.slice(0, 8)}
                 </Typography>
+                {perfilNome(c.perfilId) && (
+                  <Typography variant="caption" color="text.secondary">
+                    Perfil: {perfilNome(c.perfilId)}
+                  </Typography>
+                )}
                 <Stack direction="row" spacing={1} sx={{ mt: 1.5 }} flexWrap="wrap">
                   <Button size="small" variant="outlined" onClick={() => navigate(`/reconciliation/${c.id}`)}>
                     Abrir
