@@ -32,7 +32,7 @@ export function LoginPage() {
   });
 
   return (
-    <AuthShell title="Entrar" subtitle="Acesse sua conta Nalitech">
+    <AuthShell title="Entrar" subtitle="Acesse sua conta NALI">
       <Box component="form" onSubmit={onSubmit} noValidate>
         <Stack spacing={2}>
           {login.isError && (

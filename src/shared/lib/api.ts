@@ -1,5 +1,6 @@
 import axios, { AxiosError, type InternalAxiosRequestConfig } from 'axios';
 import { tokenStorage } from './tokenStorage';
+import { activeCompany } from './activeCompany';
 import { notifyError } from './notify';
 
 const baseURL = import.meta.env.VITE_API_BASE_URL || '/api';
@@ -14,6 +15,12 @@ api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
   const token = tokenStorage.getAccess();
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
+  }
+  // Empresa selecionada pelo ADMIN geral (item 7). O backend so respeita este
+  // header para ADMIN; para os demais perfis ele e ignorado.
+  const empresaId = activeCompany.get();
+  if (empresaId) {
+    config.headers['X-Empresa-Id'] = empresaId;
   }
   return config;
 });

@@ -8,6 +8,11 @@ export const companyApi = {
     const { data } = await api.get<Page<CompanyResponse>>('/companies', { params: { size: 1 } });
     return data.content[0] ?? null;
   },
+  // Lista de empresas para o seletor do ADMIN geral (item 7).
+  list: async (): Promise<CompanyResponse[]> => {
+    const { data } = await api.get<Page<CompanyResponse>>('/companies', { params: { size: 200 } });
+    return data.content;
+  },
   create: (body: CreateCompanyRequest) =>
     api.post<CompanyResponse>('/companies', body).then((r) => r.data),
   update: (id: string, body: UpdateCompanyRequest) =>

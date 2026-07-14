@@ -34,7 +34,7 @@ import LogoutIcon from '@mui/icons-material/Logout';
 import PersonIcon from '@mui/icons-material/Person';
 import { useAuth } from '@/modules/auth/AuthContext';
 import type { RoleName } from '@/modules/auth/types';
-import { NotificationBell } from '@/modules/notifications/components/NotificationBell';
+import { CompanySwitcher } from './CompanySwitcher';
 
 const DRAWER_WIDTH = 248;
 
@@ -55,10 +55,11 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'Exportação', to: '/exports', icon: <FileDownloadIcon />, roles: ['ADMIN', 'CONTADOR'] },
   { label: 'Financeiro', to: '/finance', icon: <PaidIcon /> },
   { label: 'Agenda fiscal', to: '/fiscal', icon: <EventNoteIcon /> },
-  { label: 'Empresa', to: '/company', icon: <BusinessIcon />, roles: ['ADMIN', 'CONTADOR'] },
+  // Empresas = escritorios (clientes internos): so o ADMIN geral gerencia/alterna.
+  { label: 'Empresas', to: '/company', icon: <BusinessIcon />, roles: ['ADMIN'] },
   { label: 'Usuários', to: '/users', icon: <GroupIcon />, roles: ['ADMIN'] },
   { label: 'Auditoria', to: '/audit', icon: <HistoryEduIcon />, roles: ['ADMIN'] },
-  { label: 'Configurações', to: '/settings/webhooks', icon: <SettingsIcon />, roles: ['ADMIN', 'CONTADOR'] },
+  { label: 'Configurações', to: '/settings/webhooks', icon: <SettingsIcon />, roles: ['ADMIN'] },
 ];
 
 export function AppLayout() {
@@ -79,7 +80,7 @@ export function AppLayout() {
     <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
       <Toolbar sx={{ px: 2 }}>
         <Typography variant="h6" color="primary" fontWeight={700}>
-          Nalitech
+          NALI
         </Typography>
       </Toolbar>
       <Divider />
@@ -120,7 +121,7 @@ export function AppLayout() {
             <MenuIcon />
           </IconButton>
           <Box sx={{ flex: 1 }} />
-          <NotificationBell />
+          <CompanySwitcher />
           <IconButton onClick={(e) => setAnchorEl(e.currentTarget)} sx={{ ml: 1 }}>
             <Avatar sx={{ width: 34, height: 34, bgcolor: 'secondary.main' }}>
               {user?.name?.charAt(0).toUpperCase()}
