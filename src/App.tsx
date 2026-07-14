@@ -7,8 +7,8 @@ import { ResetPasswordPage } from '@/modules/auth/pages/ResetPasswordPage';
 import { DashboardPage } from '@/modules/dashboard/pages/DashboardPage';
 import { ClientsPage } from '@/modules/clients/pages/ClientsPage';
 import { ClientDetailPage } from '@/modules/clients/pages/ClientDetailPage';
-import { UploadsPage } from '@/modules/uploads/pages/UploadsPage';
 import { UploadDetailPage } from '@/modules/uploads/pages/UploadDetailPage';
+import { MovementsPage } from '@/modules/movements/pages/MovementsPage';
 import { ReconciliationPage } from '@/modules/reconciliation/pages/ReconciliationPage';
 import { ConciliacaoDetailPage } from '@/modules/reconciliation/pages/ConciliacaoDetailPage';
 import { ReconciliationProfilesPage } from '@/modules/reconciliation/pages/ReconciliationProfilesPage';
@@ -51,8 +51,10 @@ export function App() {
           <Route path="/clients" element={<ClientsPage />} />
           <Route path="/clients/:id" element={<ClientDetailPage />} />
 
-          <Route path="/uploads" element={<UploadsPage />} />
+          {/* Uploads saiu do menu: o envio acontece dentro da conciliacao.
+              A rota de detalhe segue acessivel para depurar o processamento. */}
           <Route path="/uploads/:id" element={<UploadDetailPage />} />
+          <Route path="/movements" element={<MovementsPage />} />
 
           <Route path="/reconciliation" element={<ReconciliationPage />} />
           <Route path="/reconciliation/:id" element={<ConciliacaoDetailPage />} />

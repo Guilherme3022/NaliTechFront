@@ -19,7 +19,7 @@ import {
 import MenuIcon from '@mui/icons-material/Menu';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import PeopleIcon from '@mui/icons-material/People';
-import UploadFileIcon from '@mui/icons-material/UploadFile';
+import ReceiptLongIcon from '@mui/icons-material/ReceiptLong';
 import CompareArrowsIcon from '@mui/icons-material/CompareArrows';
 import AccountTreeIcon from '@mui/icons-material/AccountTree';
 import TuneIcon from '@mui/icons-material/Tune';
@@ -51,8 +51,8 @@ interface NavItem {
 const NAV_ITEMS: NavItem[] = [
   { label: 'Dashboard', to: '/dashboard', icon: <DashboardIcon /> },
   { label: 'Clientes', to: '/clients', icon: <PeopleIcon /> },
-  { label: 'Uploads', to: '/uploads', icon: <UploadFileIcon /> },
   { label: 'Conciliação', to: '/reconciliation', icon: <CompareArrowsIcon /> },
+  { label: 'Movimentações', to: '/movements', icon: <ReceiptLongIcon /> },
   { label: 'Plano de contas', to: '/accounts', icon: <AccountTreeIcon /> },
   { label: 'Perfis de conciliação', to: '/reconciliation-profiles', icon: <TuneIcon />, roles: ['ADMIN', 'CONTADOR'] },
   { label: 'Planos-modelo', to: '/plano-modelos', icon: <LibraryBooksIcon />, roles: ['ADMIN', 'CONTADOR'] },

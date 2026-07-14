@@ -1,5 +1,5 @@
 import { useRef } from 'react';
-import { useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import {
   Box,
   Button,
@@ -16,9 +16,14 @@ import {
 } from '@mui/material';
 import DownloadIcon from '@mui/icons-material/Download';
 import { PageHeader } from '@/shared/components/PageHeader';
+import { FileDropzone } from '@/shared/components/FileDropzone';
 import { LoadingState, ErrorState } from '@/shared/components/states';
 import { notifyError } from '@/shared/lib/notify';
-import { useUploadsQuery, useSubstituteUploadMutation } from '@/modules/uploads/hooks';
+import {
+  useUploadsQuery,
+  useSubstituteUploadMutation,
+  useUploadFileMutation,
+} from '@/modules/uploads/hooks';
 import { conciliacoesApi } from '../api';
 import {
   useAttachUploadMutation,
@@ -29,9 +34,11 @@ import {
 
 export function ConciliacaoDetailPage() {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const query = useConciliacaoQuery(id);
   const attach = useAttachUploadMutation();
   const substitute = useSubstituteUploadMutation();
+  const uploadFile = useUploadFileMutation();
   const concluir = useConcluirConciliacaoMutation();
   const cancelar = useCancelarConciliacaoMutation();
   const fileInputs = useRef<Record<string, HTMLInputElement | null>>({});
@@ -47,6 +54,15 @@ export function ConciliacaoDetailPage() {
   if (query.isError || !conciliacao) return <ErrorState onRetry={query.refetch} />;
 
   const encerrada = conciliacao.situacao === 'CONCLUIDA' || conciliacao.situacao === 'CANCELADA';
+
+  const enviarEAnexar = (files: File[]) => {
+    files.forEach((file) => {
+      uploadFile.mutate(
+        { file, clienteId: conciliacao.clienteId },
+        { onSuccess: (up) => attach.mutate({ id: conciliacao.id, uploadId: up.id }) },
+      );
+    });
+  };
 
   const download = async (formato: 'TXT' | 'CSV') => {
     try {
@@ -95,6 +111,15 @@ export function ConciliacaoDetailPage() {
         </CardContent>
       </Card>
 
+      {!encerrada && (
+        <Box sx={{ mb: 3 }}>
+          <Typography variant="subtitle1" fontWeight={700} sx={{ mb: 1 }}>
+            Enviar arquivo para esta conciliação
+          </Typography>
+          <FileDropzone onFiles={enviarEAnexar} />
+        </Box>
+      )}
+
       <Typography variant="subtitle1" fontWeight={700} sx={{ mb: 1 }}>
         Arquivos do cliente
       </Typography>
@@ -106,6 +131,7 @@ export function ConciliacaoDetailPage() {
             <TableRow>
               <TableCell>Arquivo</TableCell>
               <TableCell>Status</TableCell>
+              <TableCell>Observação</TableCell>
               <TableCell align="right">Ações</TableCell>
             </TableRow>
           </TableHead>
@@ -114,7 +140,13 @@ export function ConciliacaoDetailPage() {
               <TableRow key={u.id}>
                 <TableCell>{u.nomeOriginal}</TableCell>
                 <TableCell>{u.status}</TableCell>
+                <TableCell sx={{ color: u.erroMensagem ? 'error.main' : 'text.secondary', fontSize: 13 }}>
+                  {u.erroMensagem ?? (u.etapaAtual ?? '—')}
+                </TableCell>
                 <TableCell align="right">
+                  <Button size="small" onClick={() => navigate(`/uploads/${u.id}`)}>
+                    Detalhe
+                  </Button>
                   <input
                     type="file"
                     hidden
