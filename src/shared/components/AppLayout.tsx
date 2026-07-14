@@ -35,6 +35,7 @@ import PersonIcon from '@mui/icons-material/Person';
 import { useAuth } from '@/modules/auth/AuthContext';
 import type { RoleName } from '@/modules/auth/types';
 import { CompanySwitcher } from './CompanySwitcher';
+import { ClientCompetenceSwitcher } from './ClientCompetenceSwitcher';
 
 const DRAWER_WIDTH = 248;
 
@@ -122,6 +123,7 @@ export function AppLayout() {
           </IconButton>
           <Box sx={{ flex: 1 }} />
           <CompanySwitcher />
+          <ClientCompetenceSwitcher />
           <IconButton onClick={(e) => setAnchorEl(e.currentTarget)} sx={{ ml: 1 }}>
             <Avatar sx={{ width: 34, height: 34, bgcolor: 'secondary.main' }}>
               {user?.name?.charAt(0).toUpperCase()}

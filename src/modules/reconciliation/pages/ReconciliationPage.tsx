@@ -14,6 +14,7 @@ import { PageHeader } from '@/shared/components/PageHeader';
 import { LoadingState, ErrorState, EmptyState } from '@/shared/components/states';
 import { DataTable, type Column } from '@/shared/components/DataTable';
 import { usePagination } from '@/shared/hooks/usePagination';
+import { useActiveClient, useActiveCompetence } from '@/shared/lib/activeSelection';
 import {
   useConfirmReconciliationMutation,
   usePendingReconciliationsQuery,
@@ -27,23 +28,35 @@ import type { ReconciliationResponse } from '../types';
 
 export function ReconciliationPage() {
   const [tab, setTab] = useState(0);
+  const clienteId = useActiveClient();
   return (
     <>
       <PageHeader title="Conciliação" subtitle="Extrato x sistema" />
-      <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 2 }}>
-        <Tabs value={tab} onChange={(_, v) => setTab(v)}>
-          <Tab label="Pendentes" />
-          <Tab label="Histórico" />
-        </Tabs>
-      </Box>
-      {tab === 0 ? <PendingTab /> : <HistoryTab />}
+      {!clienteId ? (
+        <EmptyState
+          title="Selecione um cliente"
+          description="Escolha um cliente no topo para ver as conciliações. Cada conciliação pertence a um cliente e a uma competência."
+        />
+      ) : (
+        <>
+          <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 2 }}>
+            <Tabs value={tab} onChange={(_, v) => setTab(v)}>
+              <Tab label="Pendentes" />
+              <Tab label="Histórico" />
+            </Tabs>
+          </Box>
+          {tab === 0 ? <PendingTab /> : <HistoryTab />}
+        </>
+      )}
     </>
   );
 }
 
 function PendingTab() {
   const { page, size, setPage } = usePagination(10);
-  const query = usePendingReconciliationsQuery({ page, size });
+  const clienteId = useActiveClient() ?? undefined;
+  const competencia = useActiveCompetence() ?? undefined;
+  const query = usePendingReconciliationsQuery({ page, size, clienteId, competencia });
   const confirm = useConfirmReconciliationMutation();
   const reject = useRejectReconciliationMutation();
   const [manual, setManual] = useState<ReconciliationResponse | null>(null);
@@ -136,7 +149,9 @@ function PendingTab() {
 
 function HistoryTab() {
   const { page, size, setPage, setSize } = usePagination();
-  const query = useReconciliationHistoryQuery({ page, size });
+  const clienteId = useActiveClient() ?? undefined;
+  const competencia = useActiveCompetence() ?? undefined;
+  const query = useReconciliationHistoryQuery({ page, size, clienteId, competencia });
 
   const columns: Column<ReconciliationResponse>[] = [
     { key: 'movementId', label: 'Movimentação', render: (r) => r.movementId.slice(0, 8) },

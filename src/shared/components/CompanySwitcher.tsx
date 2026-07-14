@@ -4,6 +4,7 @@ import { FormControl, InputLabel, MenuItem, Select } from '@mui/material';
 import { useAuth } from '@/modules/auth/AuthContext';
 import { companyApi } from '@/modules/company/api';
 import { activeCompany } from '@/shared/lib/activeCompany';
+import { activeClient } from '@/shared/lib/activeSelection';
 
 // Seletor de empresa ativa no topo (itens 7 e 8). Visivel apenas para o ADMIN
 // geral, que e o unico que transita entre empresas. Ao trocar, limpamos o cache
@@ -27,6 +28,8 @@ export function CompanySwitcher() {
 
   const handleChange = (value: string) => {
     activeCompany.set(value || null);
+    // Trocar de empresa invalida o cliente selecionado (a lista de clientes muda).
+    activeClient.set(null);
     // Recarrega os dados de todas as telas no contexto da empresa escolhida.
     queryClient.clear();
   };

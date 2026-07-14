@@ -7,11 +7,15 @@ import type { ConfirmRequest } from './types';
 const KEY = 'reconciliations';
 
 // E8.5 — hooks de conciliação.
-export function usePendingReconciliationsQuery(params: PageParams) {
+export function usePendingReconciliationsQuery(
+  params: PageParams & { clienteId?: string; competencia?: string },
+) {
   return useQuery({ queryKey: [KEY, 'pending', params], queryFn: () => reconciliationApi.pending(params) });
 }
 
-export function useReconciliationHistoryQuery(params: PageParams & { status?: string }) {
+export function useReconciliationHistoryQuery(
+  params: PageParams & { status?: string; clienteId?: string; competencia?: string },
+) {
   return useQuery({ queryKey: [KEY, 'history', params], queryFn: () => reconciliationApi.history(params) });
 }
 
