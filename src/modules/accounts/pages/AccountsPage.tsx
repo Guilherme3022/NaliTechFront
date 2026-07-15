@@ -22,7 +22,7 @@ import {
   useDeleteChartAccountMutation,
   useDeleteCostCenterMutation,
   useDeleteLoanContractMutation,
-  useImportChartMutation,
+  usePreviewChartMutation,
   useLoanContractsQuery,
   useParametrizationRequestsQuery,
 } from '../hooks';
@@ -33,11 +33,13 @@ import { CostCenterFormDialog } from '../components/CostCenterFormDialog';
 import { BranchFormDialog } from '../components/BranchFormDialog';
 import { LoanContractFormDialog } from '../components/LoanContractFormDialog';
 import { ApplyParametrizationDialog } from '../components/ApplyParametrizationDialog';
+import { ChartImportPreviewDialog } from '../components/ChartImportPreviewDialog';
 import type {
   AccountRuleResponse,
   BankAccountResponse,
   BranchResponse,
   ChartAccountResponse,
+  ChartImportPreviewItem,
   CostCenterResponse,
   LoanContractResponse,
   ParametrizationRequest,
@@ -49,13 +51,27 @@ const brl = (v: number) =>
 export function AccountsPage() {
   const [tab, setTab] = useState(0);
   const clienteId = useActiveClient();
-  const importChart = useImportChartMutation();
+  const previewChart = usePreviewChartMutation();
   const fileRef = useRef<HTMLInputElement | null>(null);
+  const [previewItems, setPreviewItems] = useState<ChartImportPreviewItem[]>([]);
+  const [previewOpen, setPreviewOpen] = useState(false);
 
   const handleImport = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file && clienteId) {
-      importChart.mutate({ file, clienteId });
+      previewChart.mutate(
+        { file, clienteId },
+        {
+          onSuccess: (items) => {
+            if (items.length === 0) {
+              notifyError('Nenhuma conta encontrada no arquivo.');
+              return;
+            }
+            setPreviewItems(items);
+            setPreviewOpen(true);
+          },
+        },
+      );
     }
     e.target.value = '';
   };
@@ -64,20 +80,32 @@ export function AccountsPage() {
     <>
       <PageHeader title="Plano de contas" subtitle="Estrutura contábil e regras de classificação" />
       <Stack direction="row" justifyContent="flex-end" sx={{ mb: 2 }}>
-        <input type="file" hidden ref={fileRef} accept=".csv,.xlsx,.xls" onChange={handleImport} />
+        <input
+          type="file"
+          hidden
+          ref={fileRef}
+          accept=".txt,.csv,.xlsx,.xls"
+          onChange={handleImport}
+        />
         <Button
           variant="outlined"
           startIcon={<UploadFileIcon />}
-          disabled={importChart.isPending}
+          disabled={previewChart.isPending}
           onClick={() =>
             clienteId
               ? fileRef.current?.click()
               : notifyError('Selecione um cliente no topo antes de importar.')
           }
         >
-          Importar plano (Excel/CSV)
+          Importar plano (TXT/Excel/CSV)
         </Button>
       </Stack>
+      <ChartImportPreviewDialog
+        open={previewOpen}
+        clienteId={clienteId}
+        items={previewItems}
+        onClose={() => setPreviewOpen(false)}
+      />
       <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 2 }}>
         <Tabs value={tab} onChange={(_, v) => setTab(v)}>
           <Tab label="Contas" />

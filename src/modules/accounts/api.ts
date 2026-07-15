@@ -11,6 +11,9 @@ import type {
   BranchResponse,
   ChartAccountRequest,
   ChartAccountResponse,
+  ChartImportPreviewItem,
+  ChartImportConfirmItem,
+  ImportResult,
   CostCenterRequest,
   CostCenterResponse,
   LoanContractRequest,
@@ -33,11 +36,25 @@ export const accountsApi = {
     form.append('file', file);
     form.append('clienteId', clienteId);
     return api
-      .post<{ contasCriadas: number; contasIgnoradas: number }>('/chart-of-accounts/import', form, {
+      .post<ImportResult>('/chart-of-accounts/import', form, {
         headers: { 'Content-Type': 'multipart/form-data' },
       })
       .then((r) => r.data);
   },
+  previewChart: (file: File, clienteId: string) => {
+    const form = new FormData();
+    form.append('file', file);
+    form.append('clienteId', clienteId);
+    return api
+      .post<ChartImportPreviewItem[]>('/chart-of-accounts/import/preview', form, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      })
+      .then((r) => r.data);
+  },
+  confirmImportChart: (clienteId: string, contas: ChartImportConfirmItem[]) =>
+    api
+      .post<ImportResult>('/chart-of-accounts/import/confirm', { clienteId, contas })
+      .then((r) => r.data),
 
   rules: () => api.get<AccountRuleResponse[]>('/account-rules').then((r) => r.data),
   createRule: (body: AccountRuleRequest) =>

@@ -17,6 +17,28 @@ export interface ChartAccountRequest {
   clienteId?: string | null;
 }
 
+// Importação de plano de contas (TXT D-/C-, CSV ou Excel) com prévia e seleção.
+export interface ImportResult {
+  contasCriadas: number;
+  contasIgnoradas: number;
+}
+
+export interface ChartImportPreviewItem {
+  codigo: string;
+  nome: string;
+  tipo: string | null;
+  natureza: string | null;
+  portador: boolean;
+  jaExiste: boolean;
+  importavel: boolean;
+}
+
+export interface ChartImportConfirmItem {
+  codigo: string;
+  nome: string;
+  tipo?: string | null;
+}
+
 export interface AccountRuleResponse {
   id: string;
   nome: string;

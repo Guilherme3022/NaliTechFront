@@ -8,6 +8,7 @@ import type {
   BankAccountRequest,
   BranchRequest,
   ChartAccountRequest,
+  ChartImportConfirmItem,
   CostCenterRequest,
   LoanContractRequest,
 } from './types';
@@ -32,6 +33,29 @@ export function useImportChartMutation() {
       accountsApi.importChart(file, clienteId),
     onSuccess: (res) => {
       notifySuccess(`Importado: ${res.contasCriadas} conta(s) criada(s), ${res.contasIgnoradas} ignorada(s).`);
+      qc.invalidateQueries({ queryKey: [CHART] });
+    },
+  });
+}
+
+// Le a previa da importacao (nao persiste) para revisao/selecao.
+export function usePreviewChartMutation() {
+  return useMutation({
+    mutationFn: ({ file, clienteId }: { file: File; clienteId: string }) =>
+      accountsApi.previewChart(file, clienteId),
+  });
+}
+
+// Persiste apenas as contas selecionadas na previa.
+export function useConfirmImportChartMutation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ clienteId, contas }: { clienteId: string; contas: ChartImportConfirmItem[] }) =>
+      accountsApi.confirmImportChart(clienteId, contas),
+    onSuccess: (res) => {
+      notifySuccess(
+        `Importado: ${res.contasCriadas} conta(s) criada(s), ${res.contasIgnoradas} ignorada(s).`,
+      );
       qc.invalidateQueries({ queryKey: [CHART] });
     },
   });
