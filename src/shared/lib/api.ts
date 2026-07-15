@@ -64,7 +64,9 @@ api.interceptors.response.use(
         original.headers.Authorization = `Bearer ${newToken}`;
         return api(original);
       }
+      // Sessao expirada / token invalido: limpa e manda pro login SEM pop-up de erro.
       onSessionExpired();
+      return Promise.reject(error);
     }
 
     // Tratamento global de erro (E0.9): mensagem amigável no snackbar.
