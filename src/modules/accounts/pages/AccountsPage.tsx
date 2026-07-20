@@ -54,6 +54,7 @@ export function AccountsPage() {
   const previewChart = usePreviewChartMutation();
   const fileRef = useRef<HTMLInputElement | null>(null);
   const [previewItems, setPreviewItems] = useState<ChartImportPreviewItem[]>([]);
+  const [previewFile, setPreviewFile] = useState<File | null>(null);
   const [previewOpen, setPreviewOpen] = useState(false);
 
   const handleImport = (e: ChangeEvent<HTMLInputElement>) => {
@@ -68,6 +69,7 @@ export function AccountsPage() {
               return;
             }
             setPreviewItems(items);
+            setPreviewFile(file);
             setPreviewOpen(true);
           },
         },
@@ -104,6 +106,7 @@ export function AccountsPage() {
         open={previewOpen}
         clienteId={clienteId}
         items={previewItems}
+        file={previewFile}
         onClose={() => setPreviewOpen(false)}
       />
       <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 2 }}>

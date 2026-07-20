@@ -9,16 +9,19 @@ import {
   DialogContent,
   DialogTitle,
   Stack,
+  Tab,
   Table,
   TableBody,
   TableCell,
   TableContainer,
   TableHead,
   TableRow,
+  Tabs,
   TextField,
   Tooltip,
   Typography,
 } from '@mui/material';
+import { decodeFileText } from '@/shared/lib/fileText';
 import { useConfirmImportChartMutation } from '../hooks';
 import type { ChartImportPreviewItem } from '../types';
 
@@ -26,6 +29,8 @@ interface Props {
   open: boolean;
   clienteId: string | null;
   items: ChartImportPreviewItem[];
+  // Arquivo original, para a aba "Documento" (compara o bruto com a leitura do sistema).
+  file?: File | null;
   onClose: () => void;
 }
 
@@ -34,14 +39,28 @@ interface Props {
  * importáveis vêm marcadas por padrão; o usuário pode desmarcar as que não quer gerar.
  * Contas sem código ou já existentes ficam bloqueadas (não podem ser importadas).
  */
-export function ChartImportPreviewDialog({ open, clienteId, items, onClose }: Props) {
+export function ChartImportPreviewDialog({ open, clienteId, items, file, onClose }: Props) {
   const confirm = useConfirmImportChartMutation();
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const [filtro, setFiltro] = useState('');
+  const [aba, setAba] = useState(0);
+  const [docText, setDocText] = useState('');
+
+  // Carrega o conteúdo bruto do arquivo (com fallback de encoding) para a aba "Documento".
+  useEffect(() => {
+    if (open && file) {
+      decodeFileText(file)
+        .then(setDocText)
+        .catch(() => setDocText('(não foi possível ler o arquivo)'));
+    } else if (!open) {
+      setDocText('');
+    }
+  }, [open, file]);
 
   // Ao abrir/receber novos itens, pré-seleciona apenas os importáveis.
   useEffect(() => {
     if (open) {
+      setAba(0);
       const init = new Set<number>();
       items.forEach((it, i) => {
         if (it.importavel) init.add(i);
@@ -110,6 +129,34 @@ export function ChartImportPreviewDialog({ open, clienteId, items, onClose }: Pr
     <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
       <DialogTitle>Revisar plano de contas</DialogTitle>
       <DialogContent>
+        <Tabs value={aba} onChange={(_, v) => setAba(v)} sx={{ mb: 1.5 }}>
+          <Tab label="Importação (sistema)" />
+          <Tab label="Documento (arquivo)" />
+        </Tabs>
+        {aba === 1 && (
+          <Box
+            sx={{
+              maxHeight: 480,
+              overflow: 'auto',
+              border: 1,
+              borderColor: 'divider',
+              borderRadius: 1,
+              p: 1.5,
+              bgcolor: 'grey.50',
+            }}
+          >
+            <Typography variant="caption" color="text.secondary">
+              Conteúdo bruto do arquivo — compare com a leitura do sistema na outra aba.
+            </Typography>
+            <Box
+              component="pre"
+              sx={{ m: 0, mt: 1, fontFamily: 'monospace', fontSize: 12, whiteSpace: 'pre' }}
+            >
+              {docText || 'Carregando…'}
+            </Box>
+          </Box>
+        )}
+        {aba === 0 && (
         <Stack spacing={1.5} sx={{ mt: 0.5 }}>
           <Typography variant="body2" color="text.secondary">
             {items.length} conta(s) lida(s). Marque as que deseja gerar. Contas já existentes ou
@@ -214,6 +261,7 @@ export function ChartImportPreviewDialog({ open, clienteId, items, onClose }: Pr
             </Table>
           </TableContainer>
         </Stack>
+        )}
       </DialogContent>
       <DialogActions>
         <Button onClick={onClose} disabled={confirm.isPending}>
