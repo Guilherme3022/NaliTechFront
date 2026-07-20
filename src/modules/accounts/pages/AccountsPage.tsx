@@ -489,9 +489,21 @@ function ChartTab() {
       key: 'codigo',
       label: 'Código',
       render: (a) => (
-        <span style={{ paddingLeft: a.parentId ? 24 : 0, fontWeight: a.parentId ? 400 : 600 }}>
-          {a.codigo}
-        </span>
+        <Box sx={{ pl: a.parentId ? 3 : 0 }}>
+          <span style={{ fontWeight: a.parentId ? 400 : 600 }}>{a.codigo}</span>
+          {a.codigoOriginal && a.codigoOriginal !== a.codigo && (
+            <Tooltip title="Código completo (reduzido + classificação) como veio no arquivo">
+              <Typography
+                variant="caption"
+                color="text.secondary"
+                display="block"
+                sx={{ fontFamily: 'monospace' }}
+              >
+                {a.codigoOriginal}
+              </Typography>
+            </Tooltip>
+          )}
+        </Box>
       ),
     },
     { key: 'nome', label: 'Nome' },

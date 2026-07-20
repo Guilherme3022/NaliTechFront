@@ -1,6 +1,11 @@
 export interface ChartAccountResponse {
   id: string;
+  // Identificador único da conta (código reduzido quando o plano tem reduzido + classificação).
   codigo: string;
+  // Código de classificação (máscara hierárquica) — pode repetir entre contas; só agrupamento.
+  codigoClassificacao: string | null;
+  // Código original completo, como veio no arquivo (ex.: '000519821301001').
+  codigoOriginal: string | null;
   nome: string;
   tipo: string | null;
   // true = analítica (lançável); false = sintética (agrupadora); null = indefinida.
@@ -14,6 +19,9 @@ export interface ChartAccountResponse {
 
 export interface ChartAccountRequest {
   codigo: string;
+  // Opcionais: quando vazios, o backend assume o valor de `codigo`.
+  codigoClassificacao?: string | null;
+  codigoOriginal?: string | null;
   nome: string;
   tipo?: string;
   analitica?: boolean | null;
@@ -30,7 +38,12 @@ export interface ImportResult {
 }
 
 export interface ChartImportPreviewItem {
+  // Identificador único (reduzido quando houver).
   codigo: string;
+  // Classificação (máscara hierárquica) — pode repetir entre contas.
+  codigoClassificacao: string | null;
+  // Código original completo, sem remover zeros à esquerda.
+  codigoOriginal: string | null;
   nome: string;
   tipo: string | null;
   // Natureza estrutural: SINTETICA | ANALITICA | INDEFINIDA.
@@ -45,6 +58,8 @@ export interface ChartImportPreviewItem {
 
 export interface ChartImportConfirmItem {
   codigo: string;
+  codigoClassificacao?: string | null;
+  codigoOriginal?: string | null;
   nome: string;
   tipo?: string | null;
   analitica?: boolean | null;

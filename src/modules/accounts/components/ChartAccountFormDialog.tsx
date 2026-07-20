@@ -18,6 +18,7 @@ import { ClientScopeSelect } from './ClientScopeSelect';
 
 const schema = z.object({
   codigo: z.string().min(1, 'Informe o código'),
+  codigoClassificacao: z.string().optional(),
   nome: z.string().min(1, 'Informe o nome'),
   tipo: z.string().optional(),
 });
@@ -43,12 +44,17 @@ export function ChartAccountFormDialog({ open, account, parentId, onClose }: Pro
 
   const { register, handleSubmit, reset, formState: { errors } } = useForm<FormValues>({
     resolver: zodResolver(schema),
-    defaultValues: { codigo: '', nome: '', tipo: '' },
+    defaultValues: { codigo: '', codigoClassificacao: '', nome: '', tipo: '' },
   });
 
   useEffect(() => {
     if (open) {
-      reset({ codigo: account?.codigo ?? '', nome: account?.nome ?? '', tipo: account?.tipo ?? '' });
+      reset({
+        codigo: account?.codigo ?? '',
+        codigoClassificacao: account?.codigoClassificacao ?? '',
+        nome: account?.nome ?? '',
+        tipo: account?.tipo ?? '',
+      });
       setClienteId(account?.clienteId ?? null);
       setNatureza(account?.analitica === true ? 'A' : account?.analitica === false ? 'S' : 'auto');
       setSaldo(
@@ -63,8 +69,12 @@ export function ChartAccountFormDialog({ open, account, parentId, onClose }: Pro
 
   const onSubmit = handleSubmit(async (values) => {
     const analitica = natureza === 'auto' ? null : natureza === 'A';
+    const classificacao = values.codigoClassificacao?.trim() || null;
     const body = {
       ...values,
+      codigoClassificacao: classificacao,
+      // Preserva o código original completo na edição; na criação o backend usa o próprio código.
+      codigoOriginal: account?.codigoOriginal ?? null,
       analitica,
       naturezaSaldo: saldo === 'none' ? null : saldo,
       parentId: account?.parentId ?? parentId ?? null,
@@ -93,6 +103,21 @@ export function ChartAccountFormDialog({ open, account, parentId, onClose }: Pro
               helperText={errors.codigo?.message}
               {...register('codigo')}
             />
+            <TextField
+              label="Código de classificação (opcional)"
+              fullWidth
+              helperText="Máscara hierárquica p/ agrupamento/relatórios. Vazio = usa o código."
+              {...register('codigoClassificacao')}
+            />
+            {isEdit && account?.codigoOriginal && account.codigoOriginal !== account.codigo && (
+              <TextField
+                label="Código completo (arquivo)"
+                fullWidth
+                value={account.codigoOriginal}
+                InputProps={{ readOnly: true, sx: { fontFamily: 'monospace' } }}
+                helperText="Código inteiro como veio no arquivo (somente leitura)."
+              />
+            )}
             <TextField
               label="Nome"
               fullWidth

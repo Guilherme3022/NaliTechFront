@@ -43,7 +43,12 @@ interface Props {
 // Cópia editável de uma conta lida do arquivo. Guardamos os valores originais para
 // detectar edições e recalcular a situação (nova / editada / já existe / sem código).
 interface Row {
+  // Identificador único (código reduzido quando o plano tem reduzido + classificação).
   codigo: string;
+  // Código de classificação (máscara hierárquica) — pode repetir entre contas.
+  codigoClassificacao: string | null;
+  // Código original COMPLETO, como veio no arquivo (ex.: '000519821301001').
+  codigoCompleto: string | null;
   nome: string;
   tipo: string | null;
   natureza: string | null;
@@ -52,7 +57,8 @@ interface Row {
   portador: boolean;
   jaExiste: boolean;
   removida: boolean;
-  codigoOriginal: string;
+  // Valor do código ANTES de qualquer edição do usuário (para detectar linha editada).
+  codigoAntesEdicao: string;
   nomeOriginal: string;
 }
 
@@ -74,14 +80,14 @@ function importavelDe(r: Row): boolean {
     !r.removida &&
     !!r.codigo.trim() &&
     !!r.nome.trim() &&
-    !(r.jaExiste && r.codigo === r.codigoOriginal)
+    !(r.jaExiste && r.codigo === r.codigoAntesEdicao)
   );
 }
 
 function situacaoDe(r: Row): { label: string; color: string } {
   if (!r.codigo.trim() || !r.nome.trim()) return { label: 'Sem código', color: 'text.disabled' };
-  if (r.jaExiste && r.codigo === r.codigoOriginal) return { label: 'Já existe', color: 'warning.main' };
-  if (r.codigo !== r.codigoOriginal || r.nome !== r.nomeOriginal)
+  if (r.jaExiste && r.codigo === r.codigoAntesEdicao) return { label: 'Já existe', color: 'warning.main' };
+  if (r.codigo !== r.codigoAntesEdicao || r.nome !== r.nomeOriginal)
     return { label: 'Editada', color: 'info.main' };
   return { label: 'Nova', color: 'success.main' };
 }
@@ -124,6 +130,8 @@ export function ChartImportPreviewDialog({ open, clienteId, items, file, onClose
       setEditingIdx(null);
       const initRows: Row[] = items.map((it) => ({
         codigo: it.codigo,
+        codigoClassificacao: it.codigoClassificacao,
+        codigoCompleto: it.codigoOriginal,
         nome: it.nome,
         tipo: it.tipo,
         natureza: it.natureza,
@@ -132,7 +140,7 @@ export function ChartImportPreviewDialog({ open, clienteId, items, file, onClose
         portador: it.portador,
         jaExiste: it.jaExiste,
         removida: false,
-        codigoOriginal: it.codigo,
+        codigoAntesEdicao: it.codigo,
         nomeOriginal: it.nome,
       }));
       setRows(initRows);
@@ -225,6 +233,9 @@ export function ChartImportPreviewDialog({ open, clienteId, items, file, onClose
         const r = rows[i];
         return {
           codigo: r.codigo,
+          // Preserva classificação e código completo de ponta a ponta (agrupamento/relatórios).
+          codigoClassificacao: r.codigoClassificacao,
+          codigoOriginal: r.codigoCompleto,
           nome: r.nome,
           tipo: r.tipo ?? r.natureza,
           analitica: r.analitica,
@@ -236,7 +247,7 @@ export function ChartImportPreviewDialog({ open, clienteId, items, file, onClose
     onClose();
   };
 
-  const jaExistem = rows.filter((r) => r.jaExiste && r.codigo === r.codigoOriginal).length;
+  const jaExistem = rows.filter((r) => r.jaExiste && r.codigo === r.codigoAntesEdicao).length;
   const semCodigo = rows.filter((r) => !r.codigo.trim() || !r.nome.trim()).length;
 
   // Tipo = S (Sintética) / A (Analítica). Natureza = D (Devedora) / C (Credora). Ambos opcionais.
@@ -425,7 +436,21 @@ export function ChartImportPreviewDialog({ open, clienteId, items, file, onClose
                           </>
                         ) : (
                           <>
-                            <TableCell>{r.codigo || '—'}</TableCell>
+                            <TableCell>
+                              {r.codigo || '—'}
+                              {r.codigoCompleto && r.codigoCompleto !== r.codigo && (
+                                <Tooltip title="Código completo (reduzido + classificação) como veio no arquivo">
+                                  <Typography
+                                    variant="caption"
+                                    color="text.secondary"
+                                    display="block"
+                                    sx={{ fontFamily: 'monospace' }}
+                                  >
+                                    {r.codigoCompleto}
+                                  </Typography>
+                                </Tooltip>
+                              )}
+                            </TableCell>
                             <TableCell>
                               {r.nome || '—'}
                               {r.portador && (
