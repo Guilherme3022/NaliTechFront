@@ -92,7 +92,12 @@ export function ChartImportPreviewDialog({ open, clienteId, items, onClose }: Pr
     if (!clienteId) return;
     const contas = importaveis
       .filter(({ i }) => selected.has(i))
-      .map(({ it }) => ({ codigo: it.codigo, nome: it.nome, tipo: it.natureza ?? it.tipo }));
+      .map(({ it }) => ({
+        codigo: it.codigo,
+        nome: it.nome,
+        tipo: it.tipo ?? it.natureza,
+        analitica: it.analitica,
+      }));
     if (contas.length === 0) return;
     await confirm.mutateAsync({ clienteId, contas });
     onClose();
@@ -169,10 +174,10 @@ export function ChartImportPreviewDialog({ open, clienteId, items, onClose }: Pr
                       )}
                     </TableCell>
                     <TableCell>
-                      {it.natureza === 'DEBITO' ? (
-                        <Chip size="small" color="error" variant="outlined" label="Débito" />
-                      ) : it.natureza === 'CREDITO' ? (
-                        <Chip size="small" color="success" variant="outlined" label="Crédito" />
+                      {it.analitica === true ? (
+                        <Chip size="small" color="success" variant="outlined" label="Analítica" />
+                      ) : it.analitica === false ? (
+                        <Chip size="small" variant="outlined" label="Sintética" />
                       ) : (
                         it.tipo ?? '—'
                       )}

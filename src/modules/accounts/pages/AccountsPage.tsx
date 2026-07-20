@@ -494,6 +494,18 @@ function ChartTab() {
     { key: 'nome', label: 'Nome' },
     { key: 'tipo', label: 'Tipo', render: (a) => a.tipo ?? '—' },
     {
+      key: 'natureza',
+      label: 'Natureza',
+      render: (a) =>
+        a.analitica === true ? (
+          <Chip size="small" label="Analítica" color="success" variant="outlined" />
+        ) : a.analitica === false ? (
+          <Chip size="small" label="Sintética" variant="outlined" />
+        ) : (
+          '—'
+        ),
+    },
+    {
       key: 'actions',
       label: 'Ações',
       align: 'right',

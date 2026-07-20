@@ -3,6 +3,7 @@ import type { PageParams } from '@/shared/types';
 import { notifySuccess } from '@/shared/lib/notify';
 import { conciliacoesApi, reconciliationApi, reconciliationProfilesApi } from './api';
 import type {
+  BatchConfirmItem,
   ConfirmRequest,
   CreateConciliacaoRequest,
   ReconciliationProfileRequest,
@@ -147,6 +148,50 @@ export function useRejectReconciliationMutation() {
     mutationFn: (id: string) => reconciliationApi.reject(id),
     onSuccess: () => {
       notifySuccess('Conciliação rejeitada.');
+      qc.invalidateQueries({ queryKey: [KEY] });
+    },
+  });
+}
+
+// Resumo do lote (conciliado x pendente, valores) por cliente/competência.
+export function useReconciliationSummaryQuery(params: { clienteId?: string; competencia?: string }) {
+  return useQuery({
+    queryKey: [KEY, 'summary', params],
+    queryFn: () => reconciliationApi.summary(params),
+    enabled: !!params.clienteId,
+  });
+}
+
+export function useConfirmBatchMutation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (itens: BatchConfirmItem[]) => reconciliationApi.confirmBatch(itens),
+    onSuccess: (res) => {
+      notifySuccess(`${res.length} conciliação(ões) confirmada(s).`);
+      qc.invalidateQueries({ queryKey: [KEY] });
+    },
+  });
+}
+
+export function useRejectBatchMutation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (ids: string[]) => reconciliationApi.rejectBatch(ids),
+    onSuccess: (res) => {
+      notifySuccess(`${res.length} conciliação(ões) rejeitada(s).`);
+      qc.invalidateQueries({ queryKey: [KEY] });
+    },
+  });
+}
+
+// Pareamento N:1 (agrupamento): casa várias movimentações do sistema com o extrato.
+export function useGroupMatchMutation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, movementIds }: { id: string; movementIds: string[] }) =>
+      reconciliationApi.groupMatch(id, movementIds),
+    onSuccess: () => {
+      notifySuccess('Movimentações agrupadas.');
       qc.invalidateQueries({ queryKey: [KEY] });
     },
   });

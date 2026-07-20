@@ -3,6 +3,8 @@ export interface ChartAccountResponse {
   codigo: string;
   nome: string;
   tipo: string | null;
+  // true = analítica (lançável); false = sintética (agrupadora); null = indefinida.
+  analitica: boolean | null;
   categoryId: string | null;
   parentId: string | null;
   clienteId: string | null;
@@ -12,6 +14,7 @@ export interface ChartAccountRequest {
   codigo: string;
   nome: string;
   tipo?: string;
+  analitica?: boolean | null;
   categoryId?: string | null;
   parentId?: string | null;
   clienteId?: string | null;
@@ -27,7 +30,9 @@ export interface ChartImportPreviewItem {
   codigo: string;
   nome: string;
   tipo: string | null;
+  // Natureza estrutural: SINTETICA | ANALITICA | INDEFINIDA.
   natureza: string | null;
+  analitica: boolean | null;
   portador: boolean;
   jaExiste: boolean;
   importavel: boolean;
@@ -37,6 +42,7 @@ export interface ChartImportConfirmItem {
   codigo: string;
   nome: string;
   tipo?: string | null;
+  analitica?: boolean | null;
 }
 
 export interface AccountRuleResponse {

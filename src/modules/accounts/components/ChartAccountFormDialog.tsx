@@ -8,6 +8,7 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
+  MenuItem,
   Stack,
   TextField,
 } from '@mui/material';
@@ -35,6 +36,8 @@ export function ChartAccountFormDialog({ open, account, parentId, onClose }: Pro
   const update = useUpdateChartAccountMutation();
 
   const [clienteId, setClienteId] = useState<string | null>(null);
+  // Natureza: 'auto' (deixa o sistema inferir pela hierarquia), 'A' (analítica) ou 'S' (sintética).
+  const [natureza, setNatureza] = useState<'auto' | 'A' | 'S'>('auto');
 
   const { register, handleSubmit, reset, formState: { errors } } = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -45,11 +48,13 @@ export function ChartAccountFormDialog({ open, account, parentId, onClose }: Pro
     if (open) {
       reset({ codigo: account?.codigo ?? '', nome: account?.nome ?? '', tipo: account?.tipo ?? '' });
       setClienteId(account?.clienteId ?? null);
+      setNatureza(account?.analitica === true ? 'A' : account?.analitica === false ? 'S' : 'auto');
     }
   }, [open, account, reset]);
 
   const onSubmit = handleSubmit(async (values) => {
-    const body = { ...values, parentId: account?.parentId ?? parentId ?? null, clienteId };
+    const analitica = natureza === 'auto' ? null : natureza === 'A';
+    const body = { ...values, analitica, parentId: account?.parentId ?? parentId ?? null, clienteId };
     if (isEdit && account) {
       await update.mutateAsync({ id: account.id, body });
     } else {
@@ -81,6 +86,18 @@ export function ChartAccountFormDialog({ open, account, parentId, onClose }: Pro
               {...register('nome')}
             />
             <TextField label="Tipo (ex: RECEITA, DESPESA)" fullWidth {...register('tipo')} />
+            <TextField
+              select
+              label="Natureza"
+              fullWidth
+              value={natureza}
+              onChange={(e) => setNatureza(e.target.value as 'auto' | 'A' | 'S')}
+              helperText="Analítica recebe lançamento; sintética é agrupadora."
+            >
+              <MenuItem value="auto">Automática (pela hierarquia)</MenuItem>
+              <MenuItem value="A">Analítica (lançável)</MenuItem>
+              <MenuItem value="S">Sintética (agrupadora)</MenuItem>
+            </TextField>
             <ClientScopeSelect value={clienteId} onChange={setClienteId} />
           </Stack>
         </DialogContent>

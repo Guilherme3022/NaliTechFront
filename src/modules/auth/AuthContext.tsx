@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { tokenStorage } from '@/shared/lib/tokenStorage';
+import { useIdleLogout } from '@/shared/lib/idleTimeout';
 import { authApi } from './api';
 import type { RoleName, UserResponse } from './types';
 
@@ -65,6 +66,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
     queryClient.clear();
   }
+
+  // Timeout de inatividade (2h): se o usuário não fizer nada, encerra a sessão
+  // e manda para a tela de login. Backstop no backend (refresh token de ~2h).
+  useIdleLogout(!!user, () => {
+    void logout().finally(() => {
+      if (!window.location.pathname.startsWith('/login')) {
+        window.location.href = '/login';
+      }
+    });
+  });
 
   const value = useMemo<AuthContextValue>(
     () => ({

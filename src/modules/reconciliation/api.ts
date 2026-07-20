@@ -1,12 +1,14 @@
 import { api } from '@/shared/lib/api';
 import type { Page, PageParams } from '@/shared/types';
 import type {
+  BatchConfirmItem,
   ConciliacaoResponse,
   ConfirmRequest,
   CreateConciliacaoRequest,
   ReconciliationProfileRequest,
   ReconciliationProfileResponse,
   ReconciliationResponse,
+  ReconciliationSummary,
 } from './types';
 
 export const reconciliationApi = {
@@ -18,6 +20,18 @@ export const reconciliationApi = {
     api.post<ReconciliationResponse>(`/reconciliations/${id}/confirm`, body).then((r) => r.data),
   reject: (id: string) =>
     api.post<ReconciliationResponse>(`/reconciliations/${id}/reject`).then((r) => r.data),
+  confirmBatch: (itens: BatchConfirmItem[]) =>
+    api
+      .post<ReconciliationResponse[]>('/reconciliations/confirm-batch', { itens })
+      .then((r) => r.data),
+  rejectBatch: (ids: string[]) =>
+    api.post<ReconciliationResponse[]>('/reconciliations/reject-batch', { ids }).then((r) => r.data),
+  summary: (params: { clienteId?: string; competencia?: string }) =>
+    api.get<ReconciliationSummary>('/reconciliations/summary', { params }).then((r) => r.data),
+  groupMatch: (id: string, movementIds: string[]) =>
+    api
+      .post<ReconciliationResponse>(`/reconciliations/${id}/group-match`, { movementIds })
+      .then((r) => r.data),
 };
 
 // Conciliacao como lote/processo mensal (spec secoes 9-12).
