@@ -14,12 +14,14 @@ export function useUploadFileMutation() {
     mutationFn: ({
       file,
       clienteId,
+      origem,
       onProgress,
     }: {
       file: File;
       clienteId?: string;
+      origem?: 'EXTRATO' | 'SISTEMA';
       onProgress?: (pct: number) => void;
-    }) => uploadsApi.upload(file, clienteId, onProgress),
+    }) => uploadsApi.upload(file, clienteId, origem, onProgress),
     onSuccess: () => qc.invalidateQueries({ queryKey: [KEY] }),
   });
 }

@@ -17,10 +17,16 @@ export const uploadsApi = {
       })
       .then((r) => r.data);
   },
-  upload: (file: File, clienteId?: string, onProgress?: (pct: number) => void) => {
+  upload: (
+    file: File,
+    clienteId?: string,
+    origem?: 'EXTRATO' | 'SISTEMA',
+    onProgress?: (pct: number) => void,
+  ) => {
     const form = new FormData();
     form.append('file', file);
     if (clienteId) form.append('clienteId', clienteId);
+    if (origem) form.append('origem', origem);
     return api
       .post<UploadResponse>('/uploads', form, {
         headers: { 'Content-Type': 'multipart/form-data' },

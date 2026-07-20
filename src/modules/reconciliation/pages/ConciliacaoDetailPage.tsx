@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
   Box,
@@ -6,12 +6,15 @@ import {
   Card,
   CardContent,
   Chip,
+  Divider,
   Stack,
   Table,
   TableBody,
   TableCell,
   TableHead,
   TableRow,
+  ToggleButton,
+  ToggleButtonGroup,
   Typography,
 } from '@mui/material';
 import DownloadIcon from '@mui/icons-material/Download';
@@ -24,6 +27,7 @@ import {
   useSubstituteUploadMutation,
   useUploadFileMutation,
 } from '@/modules/uploads/hooks';
+import type { OrigemDocumento } from '@/modules/uploads/types';
 import { conciliacoesApi } from '../api';
 import {
   useAttachUploadMutation,
@@ -31,6 +35,12 @@ import {
   useConciliacaoQuery,
   useConcluirConciliacaoMutation,
 } from '../hooks';
+import { ReconciliationReview } from '../components/ReconciliationReview';
+
+const ORIGEM_LABEL: Record<OrigemDocumento, string> = {
+  EXTRATO: 'Extrato (banco)',
+  SISTEMA: 'Sistema (contas a pagar/receber)',
+};
 
 export function ConciliacaoDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -42,6 +52,7 @@ export function ConciliacaoDetailPage() {
   const concluir = useConcluirConciliacaoMutation();
   const cancelar = useCancelarConciliacaoMutation();
   const fileInputs = useRef<Record<string, HTMLInputElement | null>>({});
+  const [origem, setOrigem] = useState<OrigemDocumento>('EXTRATO');
 
   const conciliacao = query.data;
   const uploadsQuery = useUploadsQuery({
@@ -54,11 +65,13 @@ export function ConciliacaoDetailPage() {
   if (query.isError || !conciliacao) return <ErrorState onRetry={query.refetch} />;
 
   const encerrada = conciliacao.situacao === 'CONCLUIDA' || conciliacao.situacao === 'CANCELADA';
+  // competencia do lote vem como "YYYY-MM-DD"; as queries de itens usam "YYYY-MM".
+  const competenciaMes = conciliacao.competencia?.slice(0, 7);
 
   const enviarEAnexar = (files: File[]) => {
     files.forEach((file) => {
       uploadFile.mutate(
-        { file, clienteId: conciliacao.clienteId },
+        { file, clienteId: conciliacao.clienteId, origem },
         { onSuccess: (up) => attach.mutate({ id: conciliacao.id, uploadId: up.id }) },
       );
     });
@@ -116,7 +129,25 @@ export function ConciliacaoDetailPage() {
           <Typography variant="subtitle1" fontWeight={700} sx={{ mb: 1 }}>
             Enviar arquivo para esta conciliação
           </Typography>
+          <Stack direction="row" spacing={2} alignItems="center" sx={{ mb: 1 }} flexWrap="wrap">
+            <Typography variant="body2" color="text.secondary">
+              Tipo do documento:
+            </Typography>
+            <ToggleButtonGroup
+              size="small"
+              exclusive
+              value={origem}
+              onChange={(_, v: OrigemDocumento | null) => v && setOrigem(v)}
+            >
+              <ToggleButton value="EXTRATO">Extrato (banco)</ToggleButton>
+              <ToggleButton value="SISTEMA">Sistema (contas a pagar/receber)</ToggleButton>
+            </ToggleButtonGroup>
+          </Stack>
           <FileDropzone onFiles={enviarEAnexar} />
+          <Typography variant="caption" color="text.secondary">
+            A conciliação casa lançamentos do <b>extrato</b> com os do <b>sistema</b>. Envie os dois
+            lados para o mesmo cliente/competência.
+          </Typography>
         </Box>
       )}
 
@@ -130,6 +161,7 @@ export function ConciliacaoDetailPage() {
           <TableHead>
             <TableRow>
               <TableCell>Arquivo</TableCell>
+              <TableCell>Tipo</TableCell>
               <TableCell>Status</TableCell>
               <TableCell>Observação</TableCell>
               <TableCell align="right">Ações</TableCell>
@@ -139,6 +171,18 @@ export function ConciliacaoDetailPage() {
             {(uploadsQuery.data?.content ?? []).map((u) => (
               <TableRow key={u.id}>
                 <TableCell>{u.nomeOriginal}</TableCell>
+                <TableCell>
+                  {u.origem ? (
+                    <Chip
+                      size="small"
+                      variant="outlined"
+                      color={u.origem === 'EXTRATO' ? 'primary' : 'secondary'}
+                      label={ORIGEM_LABEL[u.origem]}
+                    />
+                  ) : (
+                    '—'
+                  )}
+                </TableCell>
                 <TableCell>{u.status}</TableCell>
                 <TableCell sx={{ color: u.erroMensagem ? 'error.main' : 'text.secondary', fontSize: 13 }}>
                   {u.erroMensagem ?? (u.etapaAtual ?? '—')}
@@ -176,6 +220,13 @@ export function ConciliacaoDetailPage() {
           </TableBody>
         </Table>
       )}
+
+      <Divider sx={{ my: 3 }} />
+
+      <Typography variant="h6" fontWeight={700} sx={{ mb: 1.5 }}>
+        Conciliação (extrato × sistema)
+      </Typography>
+      <ReconciliationReview clienteId={conciliacao.clienteId} competencia={competenciaMes} />
     </>
   );
 }
