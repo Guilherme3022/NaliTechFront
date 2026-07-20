@@ -5,6 +5,8 @@ export interface ChartAccountResponse {
   tipo: string | null;
   // true = analítica (lançável); false = sintética (agrupadora); null = indefinida.
   analitica: boolean | null;
+  // Natureza de saldo: 'DEVEDORA' | 'CREDORA' | null (o que o D-/C- legado indicava).
+  naturezaSaldo: string | null;
   categoryId: string | null;
   parentId: string | null;
   clienteId: string | null;
@@ -15,6 +17,7 @@ export interface ChartAccountRequest {
   nome: string;
   tipo?: string;
   analitica?: boolean | null;
+  naturezaSaldo?: string | null;
   categoryId?: string | null;
   parentId?: string | null;
   clienteId?: string | null;
@@ -33,6 +36,8 @@ export interface ChartImportPreviewItem {
   // Natureza estrutural: SINTETICA | ANALITICA | INDEFINIDA.
   natureza: string | null;
   analitica: boolean | null;
+  // Natureza de saldo: 'DEVEDORA' | 'CREDORA' | null.
+  naturezaSaldo: string | null;
   portador: boolean;
   jaExiste: boolean;
   importavel: boolean;
@@ -43,6 +48,7 @@ export interface ChartImportConfirmItem {
   nome: string;
   tipo?: string | null;
   analitica?: boolean | null;
+  naturezaSaldo?: string | null;
 }
 
 export interface AccountRuleResponse {

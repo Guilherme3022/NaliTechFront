@@ -38,6 +38,8 @@ export function ChartAccountFormDialog({ open, account, parentId, onClose }: Pro
   const [clienteId, setClienteId] = useState<string | null>(null);
   // Natureza: 'auto' (deixa o sistema inferir pela hierarquia), 'A' (analítica) ou 'S' (sintética).
   const [natureza, setNatureza] = useState<'auto' | 'A' | 'S'>('auto');
+  // Natureza de saldo (o que o D-/C- legado indicava): devedora (débito) ou credora (crédito).
+  const [saldo, setSaldo] = useState<'none' | 'DEVEDORA' | 'CREDORA'>('none');
 
   const { register, handleSubmit, reset, formState: { errors } } = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -49,12 +51,25 @@ export function ChartAccountFormDialog({ open, account, parentId, onClose }: Pro
       reset({ codigo: account?.codigo ?? '', nome: account?.nome ?? '', tipo: account?.tipo ?? '' });
       setClienteId(account?.clienteId ?? null);
       setNatureza(account?.analitica === true ? 'A' : account?.analitica === false ? 'S' : 'auto');
+      setSaldo(
+        account?.naturezaSaldo === 'DEVEDORA'
+          ? 'DEVEDORA'
+          : account?.naturezaSaldo === 'CREDORA'
+            ? 'CREDORA'
+            : 'none',
+      );
     }
   }, [open, account, reset]);
 
   const onSubmit = handleSubmit(async (values) => {
     const analitica = natureza === 'auto' ? null : natureza === 'A';
-    const body = { ...values, analitica, parentId: account?.parentId ?? parentId ?? null, clienteId };
+    const body = {
+      ...values,
+      analitica,
+      naturezaSaldo: saldo === 'none' ? null : saldo,
+      parentId: account?.parentId ?? parentId ?? null,
+      clienteId,
+    };
     if (isEdit && account) {
       await update.mutateAsync({ id: account.id, body });
     } else {
@@ -85,10 +100,10 @@ export function ChartAccountFormDialog({ open, account, parentId, onClose }: Pro
               helperText={errors.nome?.message}
               {...register('nome')}
             />
-            <TextField label="Tipo (ex: RECEITA, DESPESA)" fullWidth {...register('tipo')} />
+            <TextField label="Classificação (ex.: RECEITA, DESPESA)" fullWidth {...register('tipo')} />
             <TextField
               select
-              label="Natureza"
+              label="Tipo (S/A)"
               fullWidth
               value={natureza}
               onChange={(e) => setNatureza(e.target.value as 'auto' | 'A' | 'S')}
@@ -97,6 +112,18 @@ export function ChartAccountFormDialog({ open, account, parentId, onClose }: Pro
               <MenuItem value="auto">Automática (pela hierarquia)</MenuItem>
               <MenuItem value="A">Analítica (lançável)</MenuItem>
               <MenuItem value="S">Sintética (agrupadora)</MenuItem>
+            </TextField>
+            <TextField
+              select
+              label="Natureza (D/C)"
+              fullWidth
+              value={saldo}
+              onChange={(e) => setSaldo(e.target.value as 'none' | 'DEVEDORA' | 'CREDORA')}
+              helperText="Natureza de saldo da conta (devedora = débito; credora = crédito)."
+            >
+              <MenuItem value="none">—</MenuItem>
+              <MenuItem value="DEVEDORA">Devedora (débito)</MenuItem>
+              <MenuItem value="CREDORA">Credora (crédito)</MenuItem>
             </TextField>
             <ClientScopeSelect value={clienteId} onChange={setClienteId} />
           </Stack>

@@ -495,15 +495,34 @@ function ChartTab() {
       ),
     },
     { key: 'nome', label: 'Nome' },
-    { key: 'tipo', label: 'Tipo', render: (a) => a.tipo ?? '—' },
+    {
+      key: 'tipo',
+      label: 'Tipo',
+      render: (a) =>
+        a.analitica === true ? (
+          <Tooltip title="Analítica">
+            <Chip size="small" label="A" color="success" variant="outlined" />
+          </Tooltip>
+        ) : a.analitica === false ? (
+          <Tooltip title="Sintética">
+            <Chip size="small" label="S" variant="outlined" />
+          </Tooltip>
+        ) : (
+          '—'
+        ),
+    },
     {
       key: 'natureza',
       label: 'Natureza',
       render: (a) =>
-        a.analitica === true ? (
-          <Chip size="small" label="Analítica" color="success" variant="outlined" />
-        ) : a.analitica === false ? (
-          <Chip size="small" label="Sintética" variant="outlined" />
+        a.naturezaSaldo === 'DEVEDORA' ? (
+          <Tooltip title="Devedora (débito)">
+            <Chip size="small" label="D" color="error" variant="outlined" />
+          </Tooltip>
+        ) : a.naturezaSaldo === 'CREDORA' ? (
+          <Tooltip title="Credora (crédito)">
+            <Chip size="small" label="C" color="success" variant="outlined" />
+          </Tooltip>
         ) : (
           '—'
         ),
