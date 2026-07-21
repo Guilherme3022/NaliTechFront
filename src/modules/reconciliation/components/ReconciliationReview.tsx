@@ -26,12 +26,15 @@ import { formatCurrency, formatDate } from '@/shared/lib/format';
 import {
   useConfirmBatchMutation,
   useConfirmReconciliationMutation,
+  useOptimizeReconciliationMutation,
   usePendingReconciliationsQuery,
   useReconciliationHistoryQuery,
   useReconciliationSummaryQuery,
   useRejectBatchMutation,
   useRejectReconciliationMutation,
 } from '../hooks';
+import { useMovementsQuery } from '@/modules/movements/hooks';
+import type { MovementResponse, MovementStatus } from '@/modules/movements/types';
 import { ReconciliationSplitView } from './ReconciliationSplitView';
 import { ManualMatchModal } from './ManualMatchModal';
 import { GroupMatchModal } from './GroupMatchModal';
@@ -55,17 +58,73 @@ export function ReconciliationReview({ clienteId, competencia }: Props) {
     <>
       <SummaryBar clienteId={clienteId} competencia={competencia} />
       <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 2 }}>
-        <Tabs value={tab} onChange={(_, v) => setTab(v)}>
-          <Tab label="Pendentes" />
-          <Tab label="Histórico" />
+        <Tabs value={tab} onChange={(_, v) => setTab(v)} variant="scrollable" scrollButtons="auto">
+          <Tab label="A conciliar" />
+          <Tab label="Extrato (banco)" />
+          <Tab label="Sistema (contas a pagar/receber)" />
+          <Tab label="Concluídas" />
         </Tabs>
       </Box>
-      {tab === 0 ? (
-        <PendingTab clienteId={clienteId} competencia={competencia} />
-      ) : (
-        <HistoryTab clienteId={clienteId} competencia={competencia} />
+      {tab === 0 && <PendingTab clienteId={clienteId} competencia={competencia} />}
+      {tab === 1 && (
+        <MovementsSideTab clienteId={clienteId} competencia={competencia} origem="EXTRATO" />
       )}
+      {tab === 2 && (
+        <MovementsSideTab clienteId={clienteId} competencia={competencia} origem="SISTEMA" />
+      )}
+      {tab === 3 && <HistoryTab clienteId={clienteId} competencia={competencia} />}
     </>
+  );
+}
+
+// Situacao da movimentacao (por lado) em linguagem do contador.
+function MovStatusChip({ status }: { status: MovementStatus }) {
+  const mapa: Record<MovementStatus, { label: string; color: 'default' | 'warning' | 'success' | 'info' }> = {
+    NORMALIZADO: { label: 'A conciliar', color: 'warning' },
+    CONCILIACAO_PENDENTE: { label: 'Em conciliação', color: 'info' },
+    CONCILIADO: { label: 'Conciliado', color: 'success' },
+    CLASSIFICADO: { label: 'Classificado', color: 'success' },
+  };
+  const s = mapa[status];
+  return <Chip size="small" variant="outlined" color={s.color} label={s.label} />;
+}
+
+// Aba que lista as movimentacoes de um lado (extrato OU sistema) e sua situacao.
+function MovementsSideTab({
+  clienteId,
+  competencia,
+  origem,
+}: Props & { origem: 'EXTRATO' | 'SISTEMA' }) {
+  const { page, size, setPage, setSize } = usePagination();
+  const query = useMovementsQuery({ page, size, clienteId, competencia, origem });
+
+  const columns: Column<MovementResponse>[] = [
+    { key: 'data', label: 'Data', render: (m) => formatDate(m.data) },
+    { key: 'descricao', label: 'Descrição / contraparte', render: (m) => m.descricao ?? '—' },
+    { key: 'documento', label: 'CNPJ/Doc', render: (m) => m.documento ?? '—' },
+    { key: 'valor', label: 'Valor', align: 'right', render: (m) => formatCurrency(m.valor) },
+    { key: 'status', label: 'Situação', render: (m) => <MovStatusChip status={m.status} /> },
+  ];
+
+  return (
+    <DataTable
+      columns={columns}
+      rows={query.data?.content ?? []}
+      rowKey={(m) => m.id}
+      loading={query.isLoading}
+      error={query.isError}
+      onRetry={query.refetch}
+      emptyMessage={
+        origem === 'EXTRATO'
+          ? 'Nenhum lançamento de extrato importado nesta competência.'
+          : 'Nenhum lançamento do sistema (contas a pagar/receber) importado nesta competência.'
+      }
+      page={page}
+      size={size}
+      totalElements={query.data?.totalElements ?? 0}
+      onPageChange={setPage}
+      onSizeChange={setSize}
+    />
   );
 }
 
@@ -115,6 +174,7 @@ function PendingTab({ clienteId, competencia }: Props) {
   const reject = useRejectReconciliationMutation();
   const confirmBatch = useConfirmBatchMutation();
   const rejectBatch = useRejectBatchMutation();
+  const optimize = useOptimizeReconciliationMutation();
   const [manual, setManual] = useState<ReconciliationResponse | null>(null);
   const [grupo, setGrupo] = useState<ReconciliationResponse | null>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -194,6 +254,17 @@ function PendingTab({ clienteId, competencia }: Props) {
           </Typography>
         )}
         <Stack direction="row" spacing={1} alignItems="center">
+          {competencia && (
+            <Button
+              size="small"
+              variant="text"
+              disabled={optimize.isPending}
+              onClick={() => optimize.mutate({ clienteId, competencia })}
+              title="Reprocessa os pendentes escolhendo os melhores pares (útil quando há vários valores iguais)"
+            >
+              Otimizar
+            </Button>
+          )}
           {selected.size > 0 && (
             <>
               <Button size="small" color="error" startIcon={<CloseIcon />} disabled={busy} onClick={rejectSelected}>
@@ -292,11 +363,11 @@ function PendingTab({ clienteId, competencia }: Props) {
                   </>
                 ) : (
                   <>
-                    <Button size="small" variant="text" onClick={() => setGrupo(item)}>
-                      Agrupar (N:1)
+                    <Button size="small" variant="outlined" onClick={() => setGrupo(item)}>
+                      Vincular ao sistema
                     </Button>
-                    <Button size="small" variant="outlined" onClick={() => setManual(item)}>
-                      Conciliar manualmente
+                    <Button size="small" variant="text" onClick={() => setManual(item)}>
+                      Classificar direto
                     </Button>
                   </>
                 )}

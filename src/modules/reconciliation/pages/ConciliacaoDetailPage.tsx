@@ -7,6 +7,10 @@ import {
   CardContent,
   Chip,
   Divider,
+  FormControl,
+  InputLabel,
+  MenuItem,
+  Select,
   Stack,
   Table,
   TableBody,
@@ -29,6 +33,7 @@ import {
   useUploadFileMutation,
 } from '@/modules/uploads/hooks';
 import type { OrigemDocumento } from '@/modules/uploads/types';
+import { useBankAccountsQuery } from '@/modules/accounts/hooks';
 import { conciliacoesApi } from '../api';
 import {
   useAttachUploadMutation,
@@ -55,6 +60,8 @@ export function ConciliacaoDetailPage() {
   const cancelar = useCancelarConciliacaoMutation();
   const fileInputs = useRef<Record<string, HTMLInputElement | null>>({});
   const [origem, setOrigem] = useState<OrigemDocumento>('EXTRATO');
+  const [bankAccountId, setBankAccountId] = useState<string>('');
+  const bankAccounts = useBankAccountsQuery();
 
   const conciliacao = query.data;
   const uploadsQuery = useUploadsQuery({
@@ -70,10 +77,20 @@ export function ConciliacaoDetailPage() {
   // competencia do lote vem como "YYYY-MM-DD"; as queries de itens usam "YYYY-MM".
   const competenciaMes = conciliacao.competencia?.slice(0, 7);
 
+  // Bancos do cliente atual (ou compartilhados do escritorio) para vincular ao extrato.
+  const bancosDoCliente = (bankAccounts.data ?? []).filter(
+    (b) => b.clienteId === conciliacao.clienteId || b.clienteId === null,
+  );
+
   const enviarEAnexar = (files: File[]) => {
     files.forEach((file) => {
       uploadFile.mutate(
-        { file, clienteId: conciliacao.clienteId, origem },
+        {
+          file,
+          clienteId: conciliacao.clienteId,
+          origem,
+          bankAccountId: origem === 'EXTRATO' && bankAccountId ? bankAccountId : undefined,
+        },
         { onSuccess: (up) => attach.mutate({ id: conciliacao.id, uploadId: up.id }) },
       );
     });
@@ -144,6 +161,26 @@ export function ConciliacaoDetailPage() {
               <ToggleButton value="EXTRATO">Extrato (banco)</ToggleButton>
               <ToggleButton value="SISTEMA">Sistema (contas a pagar/receber)</ToggleButton>
             </ToggleButtonGroup>
+            {origem === 'EXTRATO' && bancosDoCliente.length > 0 && (
+              <FormControl size="small" sx={{ minWidth: 220 }}>
+                <InputLabel id="banco-extrato">Banco deste extrato</InputLabel>
+                <Select
+                  labelId="banco-extrato"
+                  label="Banco deste extrato"
+                  value={bankAccountId}
+                  onChange={(e) => setBankAccountId(e.target.value)}
+                >
+                  <MenuItem value="">
+                    <em>Banco padrão do cliente</em>
+                  </MenuItem>
+                  {bancosDoCliente.map((b) => (
+                    <MenuItem key={b.id} value={b.id}>
+                      {b.nome}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            )}
           </Stack>
           <FileDropzone onFiles={enviarEAnexar} />
           <Typography variant="caption" color="text.secondary">

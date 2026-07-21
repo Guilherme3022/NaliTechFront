@@ -8,6 +8,7 @@ export interface UploadResponse {
   fileId: string | null;
   clienteId: string | null;
   origem: OrigemDocumento | null;
+  bankAccountId: string | null;
   nomeOriginal: string;
   tipoMime: string;
   tamanho: number;

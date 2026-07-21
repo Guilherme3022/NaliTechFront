@@ -6,7 +6,9 @@ import type { UpdateMovementRequest } from './types';
 
 const KEY = 'movements';
 
-export function useMovementsQuery(params: PageParams & { clienteId?: string; competencia?: string }) {
+export function useMovementsQuery(
+  params: PageParams & { clienteId?: string; competencia?: string; origem?: 'EXTRATO' | 'SISTEMA' },
+) {
   return useQuery({ queryKey: [KEY, params], queryFn: () => movementsApi.list(params) });
 }
 

@@ -79,12 +79,13 @@ export function GroupMatchModal({
 
   return (
     <Dialog open={!!item} onClose={onClose} maxWidth="md" fullWidth>
-      <DialogTitle>Agrupar movimentações (N:1)</DialogTitle>
+      <DialogTitle>Vincular ao lançamento do sistema</DialogTitle>
       <DialogContent dividers>
         <Stack spacing={1.5}>
           <Typography variant="body2" color="text.secondary">
-            Selecione as movimentações do sistema que, somadas, correspondem ao lançamento do
-            extrato. Ex.: um depósito único que quita várias duplicatas.
+            Selecione no contas a pagar/receber o(s) lançamento(s) que correspondem a esta linha do
+            extrato. Pode ser <b>um</b> (1:1) ou <b>vários que somados</b> batem com o valor (ex.: um
+            depósito único que quita várias duplicatas). O botão libera quando a soma confere.
           </Typography>
           <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap alignItems="center">
             <Chip color="default" variant="outlined" label={`Extrato (alvo): ${formatCurrency(alvo)}`} />

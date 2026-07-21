@@ -195,6 +195,19 @@ export function useRejectBatchMutation() {
   });
 }
 
+// Otimização global: reprocessa o match dos pendentes escolhendo os melhores pares.
+export function useOptimizeReconciliationMutation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (params: { clienteId: string; competencia: string }) =>
+      reconciliationApi.optimize(params),
+    onSuccess: () => {
+      notifySuccess('Correspondências reprocessadas.');
+      qc.invalidateQueries({ queryKey: [KEY] });
+    },
+  });
+}
+
 // Pareamento N:1 (agrupamento): casa várias movimentações do sistema com o extrato.
 export function useGroupMatchMutation() {
   const qc = useQueryClient();

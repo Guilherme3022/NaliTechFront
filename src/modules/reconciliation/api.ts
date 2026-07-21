@@ -32,6 +32,8 @@ export const reconciliationApi = {
     api
       .post<ReconciliationResponse>(`/reconciliations/${id}/group-match`, { movementIds })
       .then((r) => r.data),
+  optimize: (params: { clienteId: string; competencia: string }) =>
+    api.post('/reconciliations/optimize', null, { params }).then((r) => r.data),
 };
 
 // Conciliacao como lote/processo mensal (spec secoes 9-12).

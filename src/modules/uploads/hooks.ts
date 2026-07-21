@@ -15,13 +15,15 @@ export function useUploadFileMutation() {
       file,
       clienteId,
       origem,
+      bankAccountId,
       onProgress,
     }: {
       file: File;
       clienteId?: string;
       origem?: 'EXTRATO' | 'SISTEMA';
+      bankAccountId?: string;
       onProgress?: (pct: number) => void;
-    }) => uploadsApi.upload(file, clienteId, origem, onProgress),
+    }) => uploadsApi.upload(file, clienteId, origem, bankAccountId, onProgress),
     onSuccess: () => qc.invalidateQueries({ queryKey: [KEY] }),
   });
 }

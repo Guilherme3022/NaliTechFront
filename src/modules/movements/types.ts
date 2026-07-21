@@ -13,6 +13,7 @@ export interface MovementResponse {
   tipo: string | null;
   documento: string | null;
   banco: string | null;
+  origem: 'EXTRATO' | 'SISTEMA' | null;
   contaDebitoId: string | null;
   contaCreditoId: string | null;
   status: MovementStatus;

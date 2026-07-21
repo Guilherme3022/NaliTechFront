@@ -37,6 +37,13 @@ A tela de conciliação estava, na prática, inutilizável para o contador:
 - [x] F3. `ConciliacaoDetailPage`: renderizar `ReconciliationReview` do lote —
       ver e ajustar os matches dentro da conciliação.
 - [x] F4. `ReconciliationPage`: reaproveitar `ReconciliationReview`.
+- [x] F10. Botão **Otimizar** na aba de pendências (dispara a atribuicao global
+      do match para o cliente/competência).
+- [x] F9. Nomenclatura mais clara ("Vincular ao sistema" x "Classificar direto") e
+      novas abas **Extrato (banco)** e **Sistema (contas a pagar/receber)** listando
+      as movimentacoes de cada lado com a situacao (a conciliar/conciliado/classificado).
+- [x] F8. Seletor de **banco do extrato** no envio (quando tipo = Extrato), enviando
+      `bankAccountId` para a partida dobrada usar a conta contabil do banco certo.
 - [x] F7. Lista de pendencias mais compacta + seletor de itens por pagina
       (10/25/50/100) + paginacao com numero de pagina.
 - [x] F6. Polling nos itens/resumo de conciliacao + invalidacao ao anexar arquivo:
