@@ -91,6 +91,9 @@ export function useAttachUploadMutation() {
     onSuccess: () => {
       notifySuccess('Arquivo anexado à conciliação.');
       qc.invalidateQueries({ queryKey: [CONCILIACOES_KEY] });
+      // O processamento (OCR/parse/match) e assincrono; invalida as listas de itens
+      // para elas voltarem a buscar assim que as movimentacoes forem geradas.
+      qc.invalidateQueries({ queryKey: [KEY] });
     },
   });
 }
@@ -118,10 +121,17 @@ export function useCancelarConciliacaoMutation() {
 }
 
 // E8.5 — hooks de conciliação.
+// Faz polling: o pipeline (OCR/parse/normalizacao/match) roda de forma assincrona no
+// backend, entao os itens aparecem alguns segundos apos anexar o arquivo — sem precisar
+// sair e voltar da tela.
 export function usePendingReconciliationsQuery(
   params: PageParams & { clienteId?: string; competencia?: string },
 ) {
-  return useQuery({ queryKey: [KEY, 'pending', params], queryFn: () => reconciliationApi.pending(params) });
+  return useQuery({
+    queryKey: [KEY, 'pending', params],
+    queryFn: () => reconciliationApi.pending(params),
+    refetchInterval: 5000,
+  });
 }
 
 export function useReconciliationHistoryQuery(
@@ -159,6 +169,7 @@ export function useReconciliationSummaryQuery(params: { clienteId?: string; comp
     queryKey: [KEY, 'summary', params],
     queryFn: () => reconciliationApi.summary(params),
     enabled: !!params.clienteId,
+    refetchInterval: 5000,
   });
 }
 

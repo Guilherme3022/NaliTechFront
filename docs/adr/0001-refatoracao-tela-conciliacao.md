@@ -37,6 +37,11 @@ A tela de conciliação estava, na prática, inutilizável para o contador:
 - [x] F3. `ConciliacaoDetailPage`: renderizar `ReconciliationReview` do lote —
       ver e ajustar os matches dentro da conciliação.
 - [x] F4. `ReconciliationPage`: reaproveitar `ReconciliationReview`.
+- [x] F7. Lista de pendencias mais compacta + seletor de itens por pagina
+      (10/25/50/100) + paginacao com numero de pagina.
+- [x] F6. Polling nos itens/resumo de conciliacao + invalidacao ao anexar arquivo:
+      as movimentacoes aparecem sozinhas apos o processamento assincrono, sem
+      precisar sair e voltar da tela.
 - [x] F5. Seletor de papel do documento (Extrato × Sistema) no upload do lote;
       enviar `origem`. Exibir `origem` na lista de arquivos.
 

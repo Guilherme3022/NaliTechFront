@@ -71,7 +71,13 @@ export function useDeleteUploadMutation() {
     mutationFn: (id: string) => uploadsApi.remove(id),
     onSuccess: () => {
       notifySuccess('Upload removido.');
+      // A exclusao remove em cascata movimentacoes e itens de conciliacao; atualiza
+      // as telas que dependem disso (conciliacao, movimentacoes e dashboard).
       qc.invalidateQueries({ queryKey: [KEY] });
+      qc.invalidateQueries({ queryKey: ['reconciliations'] });
+      qc.invalidateQueries({ queryKey: ['conciliacoes'] });
+      qc.invalidateQueries({ queryKey: ['movements'] });
+      qc.invalidateQueries({ queryKey: ['dashboard'] });
     },
   });
 }

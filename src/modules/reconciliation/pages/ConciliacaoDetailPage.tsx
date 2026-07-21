@@ -24,6 +24,7 @@ import { LoadingState, ErrorState } from '@/shared/components/states';
 import { notifyError } from '@/shared/lib/notify';
 import {
   useUploadsQuery,
+  useDeleteUploadMutation,
   useSubstituteUploadMutation,
   useUploadFileMutation,
 } from '@/modules/uploads/hooks';
@@ -48,6 +49,7 @@ export function ConciliacaoDetailPage() {
   const query = useConciliacaoQuery(id);
   const attach = useAttachUploadMutation();
   const substitute = useSubstituteUploadMutation();
+  const removeUpload = useDeleteUploadMutation();
   const uploadFile = useUploadFileMutation();
   const concluir = useConcluirConciliacaoMutation();
   const cancelar = useCancelarConciliacaoMutation();
@@ -213,6 +215,22 @@ export function ConciliacaoDetailPage() {
                     onClick={() => attach.mutate({ id: conciliacao.id, uploadId: u.id })}
                   >
                     Anexar
+                  </Button>
+                  <Button
+                    size="small"
+                    color="error"
+                    disabled={encerrada || removeUpload.isPending}
+                    onClick={() => {
+                      if (
+                        window.confirm(
+                          `Excluir "${u.nomeOriginal}"? As movimentações e conciliações geradas por este arquivo serão removidas.`,
+                        )
+                      ) {
+                        removeUpload.mutate(u.id);
+                      }
+                    }}
+                  >
+                    Excluir
                   </Button>
                 </TableCell>
               </TableRow>

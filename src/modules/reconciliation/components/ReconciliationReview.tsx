@@ -6,7 +6,11 @@ import {
   CardContent,
   Checkbox,
   Chip,
+  FormControl,
   FormControlLabel,
+  InputLabel,
+  MenuItem,
+  Select,
   Stack,
   Tab,
   Tabs,
@@ -105,7 +109,7 @@ function SummaryBar({ clienteId, competencia }: Props) {
 }
 
 function PendingTab({ clienteId, competencia }: Props) {
-  const { page, size, setPage } = usePagination(10);
+  const { page, size, setPage, setSize } = usePagination(10);
   const query = usePendingReconciliationsQuery({ page, size, clienteId, competencia });
   const confirm = useConfirmReconciliationMutation();
   const reject = useRejectReconciliationMutation();
@@ -163,11 +167,20 @@ function PendingTab({ clienteId, competencia }: Props) {
 
   return (
     <>
-      {matched.length > 0 && (
-        <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
+      <Stack
+        direction="row"
+        justifyContent="space-between"
+        alignItems="center"
+        sx={{ mb: 1.5 }}
+        flexWrap="wrap"
+        useFlexGap
+        spacing={1}
+      >
+        {matched.length > 0 ? (
           <FormControlLabel
             control={
               <Checkbox
+                size="small"
                 checked={allSelected}
                 indeterminate={selected.size > 0 && !allSelected}
                 onChange={toggleAll}
@@ -175,12 +188,19 @@ function PendingTab({ clienteId, competencia }: Props) {
             }
             label="Selecionar sugeridas"
           />
+        ) : (
+          <Typography variant="body2" color="text.secondary">
+            {query.data?.totalElements ?? 0} pendência(s)
+          </Typography>
+        )}
+        <Stack direction="row" spacing={1} alignItems="center">
           {selected.size > 0 && (
-            <Stack direction="row" spacing={1}>
-              <Button color="error" startIcon={<CloseIcon />} disabled={busy} onClick={rejectSelected}>
+            <>
+              <Button size="small" color="error" startIcon={<CloseIcon />} disabled={busy} onClick={rejectSelected}>
                 Rejeitar {selected.size}
               </Button>
               <Button
+                size="small"
                 variant="contained"
                 startIcon={<CheckIcon />}
                 disabled={busy}
@@ -188,15 +208,30 @@ function PendingTab({ clienteId, competencia }: Props) {
               >
                 Confirmar {selected.size}
               </Button>
-            </Stack>
+            </>
           )}
+          <FormControl size="small" sx={{ minWidth: 120 }}>
+            <InputLabel id="tam-pagina">Por página</InputLabel>
+            <Select
+              labelId="tam-pagina"
+              label="Por página"
+              value={size}
+              onChange={(e) => setSize(Number(e.target.value))}
+            >
+              {[10, 25, 50, 100].map((n) => (
+                <MenuItem key={n} value={n}>
+                  {n}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
         </Stack>
-      )}
-      <Stack spacing={2}>
+      </Stack>
+      <Stack spacing={1.25}>
         {items.map((item) => (
           <Card key={item.id} variant="outlined">
-            <CardContent>
-              <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
+            <CardContent sx={{ py: 1.5, '&:last-child': { pb: 1.5 } }}>
+              <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1 }}>
                 <Stack direction="row" spacing={1} alignItems="center">
                   {item.matchedMovementId && (
                     <Checkbox
@@ -211,7 +246,7 @@ function PendingTab({ clienteId, competencia }: Props) {
               </Stack>
               <ReconciliationSplitView item={item} />
 
-              <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} alignItems="center" sx={{ mt: 2 }}>
+              <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} alignItems="center" sx={{ mt: 1.5 }}>
                 <Box sx={{ flex: 1, width: '100%' }}>
                   <AccountSelect
                     label="Conta contábil (analítica)"
@@ -231,7 +266,7 @@ function PendingTab({ clienteId, competencia }: Props) {
                 )}
               </Stack>
 
-              <Stack direction="row" spacing={1} justifyContent="flex-end" sx={{ mt: 2 }}>
+              <Stack direction="row" spacing={1} justifyContent="flex-end" sx={{ mt: 1.5 }}>
                 {item.matchedMovementId ? (
                   <>
                     <Button
@@ -272,11 +307,14 @@ function PendingTab({ clienteId, competencia }: Props) {
       </Stack>
 
       {query.data && query.data.totalPages > 1 && (
-        <Stack direction="row" justifyContent="center" spacing={1} sx={{ mt: 2 }}>
-          <Button disabled={page === 0} onClick={() => setPage(page - 1)}>
+        <Stack direction="row" justifyContent="center" alignItems="center" spacing={2} sx={{ mt: 2 }}>
+          <Button size="small" disabled={page === 0} onClick={() => setPage(page - 1)}>
             Anterior
           </Button>
-          <Button disabled={query.data.last} onClick={() => setPage(page + 1)}>
+          <Typography variant="body2" color="text.secondary">
+            Página {page + 1} de {query.data.totalPages}
+          </Typography>
+          <Button size="small" disabled={query.data.last} onClick={() => setPage(page + 1)}>
             Próxima
           </Button>
         </Stack>
