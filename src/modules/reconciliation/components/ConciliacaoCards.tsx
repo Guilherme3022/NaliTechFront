@@ -161,7 +161,7 @@ export function ConciliacaoCards() {
                     Perfil: {perfilNome(c.perfilId)}
                   </Typography>
                 )}
-                {c.situacao === 'VALIDANDO' && (
+                {c.processando && (
                   <Box sx={{ mt: 1 }}>
                     <LinearProgress />
                     <Typography variant="caption" color="text.secondary">

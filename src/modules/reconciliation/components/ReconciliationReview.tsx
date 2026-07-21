@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import {
   Alert,
   Box,
@@ -69,6 +70,7 @@ export function ReconciliationReview({ clienteId, competencia }: Props) {
   //  - wasProcessing: detecta a transicao processando -> concluido para dar um toast.
   const [longRunning, setLongRunning] = useState(false);
   const wasProcessing = useRef(false);
+  const qc = useQueryClient();
   useEffect(() => {
     if (polling) {
       wasProcessing.current = true;
@@ -80,16 +82,19 @@ export function ReconciliationReview({ clienteId, competencia }: Props) {
       wasProcessing.current = false;
       setLongRunning(false);
       notifySuccess('Arquivo processado. Lançamentos prontos para revisão.');
+      // Garante uma ultima atualizacao das listas (pending/summary) independentemente
+      // do timing do ultimo poll, para os lancamentos recem-gerados aparecerem.
+      qc.invalidateQueries({ queryKey: ['reconciliations'] });
     }
-  }, [polling]);
+  }, [polling, qc]);
 
   return (
     <>
       {polling && (
         <Alert severity="info" icon={<CircularProgress size={18} />} sx={{ mb: 2 }}>
           {longRunning
-            ? 'Ainda processando o arquivo… isso pode levar um pouco mais para documentos maiores. Você pode continuar usando o sistema — os lançamentos aparecerão aqui sozinhos.'
-            : 'Seu arquivo está sendo processado. Os lançamentos aparecerão aqui automaticamente em alguns segundos — não é necessário recarregar a página.'}
+            ? 'Ainda processando o arquivo… documentos maiores podem levar mais alguns minutos. Você pode continuar usando o sistema — os lançamentos aparecerão aqui sozinhos.'
+            : 'Seu arquivo está sendo processado. Isso pode levar alguns minutos — os lançamentos aparecerão aqui automaticamente, sem precisar recarregar a página.'}
         </Alert>
       )}
       <SummaryBar clienteId={clienteId} competencia={competencia} polling={polling} />

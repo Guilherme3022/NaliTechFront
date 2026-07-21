@@ -77,6 +77,8 @@ export interface ConciliacaoResponse {
   competencia: string;
   perfilId: string | null;
   situacao: ConciliacaoSituacao;
+  // true enquanto houver arquivo anexado ainda em processamento (upload nao finalizado).
+  processando: boolean;
 }
 
 export interface CreateConciliacaoRequest {

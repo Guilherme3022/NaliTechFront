@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { PageParams } from '@/shared/types';
-import { notifySuccess } from '@/shared/lib/notify';
+import { notifyInfo, notifySuccess } from '@/shared/lib/notify';
 import { conciliacoesApi, reconciliationApi, reconciliationProfilesApi } from './api';
 import type {
   BatchConfirmItem,
@@ -55,19 +55,18 @@ export function useDeleteProfileMutation() {
   });
 }
 
-// Situacoes transitorias em que o pipeline assincrono (OCR/parse/normalizacao/match)
-// ainda esta rodando: enquanto houver um lote nesse estado, vale a pena fazer polling
-// para as telas se atualizarem sozinhas; fora disso, nao precisamos ficar chamando.
-const PROCESSING_SITUACOES = ['VALIDANDO'];
-
+// Um lote esta "processando" enquanto tiver arquivo anexado ainda nao finalizado
+// (o backend calcula isso a partir do status do upload e devolve em `processando`).
+// Enquanto houver algum lote nesse estado vale a pena fazer polling para as telas se
+// atualizarem sozinhas; fora disso, nao precisamos ficar chamando.
 export function isConciliacaoProcessing(
-  conciliacoes: { situacao: string }[] | undefined,
+  conciliacoes: { processando?: boolean }[] | undefined,
 ): boolean {
-  return (conciliacoes ?? []).some((c) => PROCESSING_SITUACOES.includes(c.situacao));
+  return (conciliacoes ?? []).some((c) => c.processando);
 }
 
 // Lotes de conciliacao (cards) por cliente/competencia.
-// So fica em polling enquanto algum lote esta processando (VALIDANDO); assim que todos
+// So fica em polling enquanto algum lote esta processando; assim que todos
 // estabilizam, para de refazer a chamada sozinho.
 export function useConciliacoesQuery(params: { clienteId?: string; competencia?: string }) {
   return useQuery({
@@ -103,7 +102,12 @@ export function useAttachUploadMutation() {
     mutationFn: ({ id, uploadId }: { id: string; uploadId: string }) =>
       conciliacoesApi.attachUpload(id, uploadId),
     onSuccess: () => {
-      notifySuccess('Arquivo anexado à conciliação.');
+      // Avisa imediatamente que o processamento (OCR/parse/normalizacao/match) e
+      // assincrono e pode demorar — o usuario nao precisa esperar parado na tela.
+      notifyInfo(
+        'Arquivo anexado. O processamento pode levar alguns minutos — os lançamentos ' +
+          'aparecerão aqui automaticamente quando ficarem prontos.',
+      );
       qc.invalidateQueries({ queryKey: [CONCILIACOES_KEY] });
       // O processamento (OCR/parse/match) e assincrono; invalida as listas de itens
       // para elas voltarem a buscar assim que as movimentacoes forem geradas.
