@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   Alert,
   Box,
@@ -9,6 +9,7 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
+  InputAdornment,
   Stack,
   Table,
   TableBody,
@@ -16,17 +17,21 @@ import {
   TableContainer,
   TableHead,
   TableRow,
+  TextField,
   Typography,
 } from '@mui/material';
+import SearchIcon from '@mui/icons-material/Search';
 import { useMovementsQuery } from '@/modules/movements/hooks';
+import type { MovementResponse } from '@/modules/movements/types';
 import { useActiveClient, useActiveCompetence } from '@/shared/lib/activeSelection';
 import { formatCurrency, formatDate } from '@/shared/lib/format';
 import { useGroupMatchMutation } from '../hooks';
 import type { ReconciliationResponse } from '../types';
 
-// Pareamento N:1: casa o lançamento do extrato (item) com várias movimentações do
-// sistema cuja soma bata com o valor do extrato (ex.: um depósito que quita várias
-// duplicatas). Mostra a soma corrente x o alvo e só habilita quando confere.
+// Vincular ao sistema (1:1 ou N:1): casa o lançamento do extrato com um ou mais
+// lançamentos do sistema cuja soma bata com o valor do extrato. A busca é feita no
+// servidor (por descrição/CNPJ/valor); a seleção guarda os lançamentos escolhidos, então
+// a soma continua correta mesmo trocando a busca.
 export function GroupMatchModal({
   item,
   onClose,
@@ -36,44 +41,61 @@ export function GroupMatchModal({
 }) {
   const clienteId = useActiveClient() ?? undefined;
   const competencia = useActiveCompetence() ?? undefined;
-  const query = useMovementsQuery({ page: 0, size: 200, clienteId, competencia });
+  const [busca, setBusca] = useState('');
+  const [buscaDebounced, setBuscaDebounced] = useState('');
+  // Seleção guarda o objeto inteiro (não só o id) para somar mesmo o que sumiu da busca.
+  const [selecionadas, setSelecionadas] = useState<Map<string, MovementResponse>>(new Map());
   const group = useGroupMatchMutation();
-  const [selected, setSelected] = useState<Set<string>>(new Set());
+
+  // Debounce da busca (evita uma requisição por tecla).
+  useEffect(() => {
+    const t = setTimeout(() => setBuscaDebounced(busca.trim()), 300);
+    return () => clearTimeout(t);
+  }, [busca]);
 
   useEffect(() => {
-    if (item) setSelected(new Set());
+    if (item) {
+      setSelecionadas(new Map());
+      setBusca('');
+      setBuscaDebounced('');
+    }
   }, [item]);
+
+  const query = useMovementsQuery({
+    page: 0,
+    size: 50,
+    clienteId,
+    competencia,
+    q: buscaDebounced || undefined,
+  });
 
   const alvo = Math.abs(item?.movimento?.valor ?? 0);
 
-  // Candidatas: movimentações do cliente na competência, exceto a própria do extrato.
-  const candidatas = useMemo(
+  // Resultados da busca, exceto a própria movimentação do extrato.
+  const resultados = useMemo(
     () => (query.data?.content ?? []).filter((m) => m.id !== item?.movementId),
     [query.data, item],
   );
 
   const soma = useMemo(
-    () =>
-      candidatas
-        .filter((m) => selected.has(m.id))
-        .reduce((acc, m) => acc + Math.abs(m.valor ?? 0), 0),
-    [candidatas, selected],
+    () => [...selecionadas.values()].reduce((acc, m) => acc + Math.abs(m.valor ?? 0), 0),
+    [selecionadas],
   );
 
   const diff = Math.abs(alvo - soma);
-  const confere = diff < 0.01 && selected.size > 0;
+  const confere = diff < 0.01 && selecionadas.size > 0;
 
-  const toggle = (id: string) =>
-    setSelected((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
+  const toggle = (m: MovementResponse) =>
+    setSelecionadas((prev) => {
+      const next = new Map(prev);
+      if (next.has(m.id)) next.delete(m.id);
+      else next.set(m.id, m);
       return next;
     });
 
   const onConfirm = async () => {
     if (!item || !confere) return;
-    await group.mutateAsync({ id: item.id, movementIds: [...selected] });
+    await group.mutateAsync({ id: item.id, movementIds: [...selecionadas.keys()] });
     onClose();
   };
 
@@ -92,12 +114,27 @@ export function GroupMatchModal({
             <Chip
               color={confere ? 'success' : 'warning'}
               variant="outlined"
-              label={`Selecionado: ${formatCurrency(soma)}`}
+              label={`Selecionado: ${formatCurrency(soma)} (${selecionadas.size})`}
             />
-            {selected.size > 0 && !confere && (
+            {selecionadas.size > 0 && !confere && (
               <Chip color="error" variant="outlined" label={`Diferença: ${formatCurrency(diff)}`} />
             )}
           </Stack>
+
+          <TextField
+            size="small"
+            fullWidth
+            placeholder="Buscar por descrição, CNPJ/documento ou valor…"
+            value={busca}
+            onChange={(e) => setBusca(e.target.value)}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon fontSize="small" />
+                </InputAdornment>
+              ),
+            }}
+          />
 
           {query.isError && <Alert severity="error">Falha ao carregar movimentações.</Alert>}
 
@@ -108,26 +145,30 @@ export function GroupMatchModal({
                   <TableCell padding="checkbox" />
                   <TableCell>Data</TableCell>
                   <TableCell>Descrição</TableCell>
+                  <TableCell>CNPJ/Doc</TableCell>
                   <TableCell align="right">Valor</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
-                {candidatas.map((m) => (
-                  <TableRow key={m.id} hover selected={selected.has(m.id)}>
+                {resultados.map((m) => (
+                  <TableRow key={m.id} hover selected={selecionadas.has(m.id)}>
                     <TableCell padding="checkbox">
-                      <Checkbox checked={selected.has(m.id)} onChange={() => toggle(m.id)} />
+                      <Checkbox checked={selecionadas.has(m.id)} onChange={() => toggle(m)} />
                     </TableCell>
                     <TableCell>{formatDate(m.data)}</TableCell>
                     <TableCell>{m.descricao ?? '—'}</TableCell>
+                    <TableCell>{m.documento ?? '—'}</TableCell>
                     <TableCell align="right">{formatCurrency(m.valor)}</TableCell>
                   </TableRow>
                 ))}
-                {candidatas.length === 0 && !query.isLoading && (
+                {resultados.length === 0 && !query.isLoading && (
                   <TableRow>
-                    <TableCell colSpan={4}>
+                    <TableCell colSpan={5}>
                       <Box sx={{ py: 3, textAlign: 'center' }}>
                         <Typography variant="body2" color="text.secondary">
-                          Nenhuma movimentação disponível para agrupar nesta competência.
+                          {buscaDebounced
+                            ? 'Nenhum resultado para a busca.'
+                            : 'Nenhuma movimentação disponível para vincular nesta competência.'}
                         </Typography>
                       </Box>
                     </TableCell>
@@ -143,7 +184,7 @@ export function GroupMatchModal({
           Cancelar
         </Button>
         <Button variant="contained" onClick={onConfirm} disabled={!confere || group.isPending}>
-          Agrupar {selected.size > 0 ? `(${selected.size})` : ''}
+          Vincular {selecionadas.size > 0 ? `(${selecionadas.size})` : ''}
         </Button>
       </DialogActions>
     </Dialog>

@@ -37,6 +37,9 @@ A tela de conciliação estava, na prática, inutilizável para o contador:
 - [x] F3. `ConciliacaoDetailPage`: renderizar `ReconciliationReview` do lote —
       ver e ajustar os matches dentro da conciliação.
 - [x] F4. `ReconciliationPage`: reaproveitar `ReconciliationReview`.
+- [x] F11. Busca **no servidor** (endpoint /movements com `q` por descricao/CNPJ) no
+      modal "Vincular ao sistema", com debounce; selecao guarda os objetos para a soma
+      nao quebrar ao trocar a busca.
 - [x] F10. Botão **Otimizar** na aba de pendências (dispara a atribuicao global
       do match para o cliente/competência).
 - [x] F9. Nomenclatura mais clara ("Vincular ao sistema" x "Classificar direto") e

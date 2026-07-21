@@ -4,7 +4,12 @@ import type { MovementResponse, UpdateMovementRequest } from './types';
 
 export const movementsApi = {
   list: (
-    params: PageParams & { clienteId?: string; competencia?: string; origem?: 'EXTRATO' | 'SISTEMA' },
+    params: PageParams & {
+      clienteId?: string;
+      competencia?: string;
+      origem?: 'EXTRATO' | 'SISTEMA';
+      q?: string;
+    },
   ) => api.get<Page<MovementResponse>>('/movements', { params }).then((r) => r.data),
   update: (id: string, body: UpdateMovementRequest) =>
     api.put<MovementResponse>(`/movements/${id}`, body).then((r) => r.data),

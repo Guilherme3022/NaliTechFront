@@ -7,7 +7,12 @@ import type { UpdateMovementRequest } from './types';
 const KEY = 'movements';
 
 export function useMovementsQuery(
-  params: PageParams & { clienteId?: string; competencia?: string; origem?: 'EXTRATO' | 'SISTEMA' },
+  params: PageParams & {
+    clienteId?: string;
+    competencia?: string;
+    origem?: 'EXTRATO' | 'SISTEMA';
+    q?: string;
+  },
 ) {
   return useQuery({ queryKey: [KEY, params], queryFn: () => movementsApi.list(params) });
 }
