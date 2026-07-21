@@ -8,6 +8,7 @@ import {
   Chip,
   FormControl,
   InputLabel,
+  LinearProgress,
   MenuItem,
   Select,
   Stack,
@@ -159,6 +160,14 @@ export function ConciliacaoCards() {
                   <Typography variant="caption" color="text.secondary">
                     Perfil: {perfilNome(c.perfilId)}
                   </Typography>
+                )}
+                {c.situacao === 'VALIDANDO' && (
+                  <Box sx={{ mt: 1 }}>
+                    <LinearProgress />
+                    <Typography variant="caption" color="text.secondary">
+                      Processando arquivo… aguarde
+                    </Typography>
+                  </Box>
                 )}
                 <Stack direction="row" spacing={1} sx={{ mt: 1.5 }} flexWrap="wrap">
                   <Button size="small" variant="outlined" onClick={() => navigate(`/reconciliation/${c.id}`)}>

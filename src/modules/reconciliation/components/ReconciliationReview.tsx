@@ -1,11 +1,13 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
+  Alert,
   Box,
   Button,
   Card,
   CardContent,
   Checkbox,
   Chip,
+  CircularProgress,
   FormControl,
   FormControlLabel,
   InputLabel,
@@ -23,7 +25,10 @@ import { LoadingState, ErrorState, EmptyState } from '@/shared/components/states
 import { DataTable, type Column } from '@/shared/components/DataTable';
 import { usePagination } from '@/shared/hooks/usePagination';
 import { formatCurrency, formatDate } from '@/shared/lib/format';
+import { notifySuccess } from '@/shared/lib/notify';
 import {
+  isConciliacaoProcessing,
+  useConciliacoesQuery,
   useConfirmBatchMutation,
   useConfirmReconciliationMutation,
   useOptimizeReconciliationMutation,
@@ -54,9 +59,40 @@ interface Props {
  */
 export function ReconciliationReview({ clienteId, competencia }: Props) {
   const [tab, setTab] = useState(0);
+  // Reaproveita o cache da lista de conciliacoes (mesma query dos cards) so para saber
+  // se o pipeline ainda esta processando — e, com isso, ligar/desligar o polling.
+  const conciliacoes = useConciliacoesQuery({ clienteId, competencia }).data;
+  const polling = isConciliacaoProcessing(conciliacoes);
+
+  // UX do processamento assincrono:
+  //  - longRunning: apos ~20s trocamos a mensagem para avisar que pode demorar mais.
+  //  - wasProcessing: detecta a transicao processando -> concluido para dar um toast.
+  const [longRunning, setLongRunning] = useState(false);
+  const wasProcessing = useRef(false);
+  useEffect(() => {
+    if (polling) {
+      wasProcessing.current = true;
+      setLongRunning(false);
+      const t = setTimeout(() => setLongRunning(true), 20000);
+      return () => clearTimeout(t);
+    }
+    if (wasProcessing.current) {
+      wasProcessing.current = false;
+      setLongRunning(false);
+      notifySuccess('Arquivo processado. Lançamentos prontos para revisão.');
+    }
+  }, [polling]);
+
   return (
     <>
-      <SummaryBar clienteId={clienteId} competencia={competencia} />
+      {polling && (
+        <Alert severity="info" icon={<CircularProgress size={18} />} sx={{ mb: 2 }}>
+          {longRunning
+            ? 'Ainda processando o arquivo… isso pode levar um pouco mais para documentos maiores. Você pode continuar usando o sistema — os lançamentos aparecerão aqui sozinhos.'
+            : 'Seu arquivo está sendo processado. Os lançamentos aparecerão aqui automaticamente em alguns segundos — não é necessário recarregar a página.'}
+        </Alert>
+      )}
+      <SummaryBar clienteId={clienteId} competencia={competencia} polling={polling} />
       <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 2 }}>
         <Tabs value={tab} onChange={(_, v) => setTab(v)} variant="scrollable" scrollButtons="auto">
           <Tab label="A conciliar" />
@@ -65,7 +101,7 @@ export function ReconciliationReview({ clienteId, competencia }: Props) {
           <Tab label="Concluídas" />
         </Tabs>
       </Box>
-      {tab === 0 && <PendingTab clienteId={clienteId} competencia={competencia} />}
+      {tab === 0 && <PendingTab clienteId={clienteId} competencia={competencia} polling={polling} />}
       {tab === 1 && (
         <MovementsSideTab clienteId={clienteId} competencia={competencia} origem="EXTRATO" />
       )}
@@ -128,8 +164,8 @@ function MovementsSideTab({
   );
 }
 
-function SummaryBar({ clienteId, competencia }: Props) {
-  const { data } = useReconciliationSummaryQuery({ clienteId, competencia });
+function SummaryBar({ clienteId, competencia, polling }: Props & { polling?: boolean }) {
+  const { data } = useReconciliationSummaryQuery({ clienteId, competencia }, { polling });
   if (!data || data.total === 0) return null;
 
   const linha = (status: 'PENDENTE' | 'CONFIRMADO' | 'REJEITADO') =>
@@ -167,9 +203,9 @@ function SummaryBar({ clienteId, competencia }: Props) {
   );
 }
 
-function PendingTab({ clienteId, competencia }: Props) {
+function PendingTab({ clienteId, competencia, polling }: Props & { polling?: boolean }) {
   const { page, size, setPage, setSize } = usePagination(10);
-  const query = usePendingReconciliationsQuery({ page, size, clienteId, competencia });
+  const query = usePendingReconciliationsQuery({ page, size, clienteId, competencia }, { polling });
   const confirm = useConfirmReconciliationMutation();
   const reject = useRejectReconciliationMutation();
   const confirmBatch = useConfirmBatchMutation();

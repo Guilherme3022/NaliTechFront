@@ -55,12 +55,26 @@ export function useDeleteProfileMutation() {
   });
 }
 
+// Situacoes transitorias em que o pipeline assincrono (OCR/parse/normalizacao/match)
+// ainda esta rodando: enquanto houver um lote nesse estado, vale a pena fazer polling
+// para as telas se atualizarem sozinhas; fora disso, nao precisamos ficar chamando.
+const PROCESSING_SITUACOES = ['VALIDANDO'];
+
+export function isConciliacaoProcessing(
+  conciliacoes: { situacao: string }[] | undefined,
+): boolean {
+  return (conciliacoes ?? []).some((c) => PROCESSING_SITUACOES.includes(c.situacao));
+}
+
 // Lotes de conciliacao (cards) por cliente/competencia.
+// So fica em polling enquanto algum lote esta processando (VALIDANDO); assim que todos
+// estabilizam, para de refazer a chamada sozinho.
 export function useConciliacoesQuery(params: { clienteId?: string; competencia?: string }) {
   return useQuery({
     queryKey: [CONCILIACOES_KEY, params],
     queryFn: () => conciliacoesApi.list(params),
     enabled: !!params.clienteId,
+    refetchInterval: (query) => (isConciliacaoProcessing(query.state.data) ? 4000 : false),
   });
 }
 
@@ -126,11 +140,14 @@ export function useCancelarConciliacaoMutation() {
 // sair e voltar da tela.
 export function usePendingReconciliationsQuery(
   params: PageParams & { clienteId?: string; competencia?: string },
+  options?: { polling?: boolean },
 ) {
   return useQuery({
     queryKey: [KEY, 'pending', params],
     queryFn: () => reconciliationApi.pending(params),
-    refetchInterval: 5000,
+    // So faz polling enquanto o pipeline esta processando; caso contrario o cache e
+    // atualizado por foco de janela e pelas mutations (confirmar/rejeitar/anexar).
+    refetchInterval: options?.polling ? 5000 : false,
   });
 }
 
@@ -164,12 +181,15 @@ export function useRejectReconciliationMutation() {
 }
 
 // Resumo do lote (conciliado x pendente, valores) por cliente/competência.
-export function useReconciliationSummaryQuery(params: { clienteId?: string; competencia?: string }) {
+export function useReconciliationSummaryQuery(
+  params: { clienteId?: string; competencia?: string },
+  options?: { polling?: boolean },
+) {
   return useQuery({
     queryKey: [KEY, 'summary', params],
     queryFn: () => reconciliationApi.summary(params),
     enabled: !!params.clienteId,
-    refetchInterval: 5000,
+    refetchInterval: options?.polling ? 5000 : false,
   });
 }
 
