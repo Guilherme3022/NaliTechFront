@@ -21,6 +21,7 @@ import {
 } from '@mui/material';
 import CheckIcon from '@mui/icons-material/Check';
 import CloseIcon from '@mui/icons-material/Close';
+import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import { AccountSelect } from '@/modules/accounts/components/AccountSelect';
 import { LoadingState, ErrorState, EmptyState } from '@/shared/components/states';
 import { DataTable, type Column } from '@/shared/components/DataTable';
@@ -38,6 +39,7 @@ import {
   useReconciliationSummaryQuery,
   useRejectBatchMutation,
   useRejectReconciliationMutation,
+  useStartAiSweepMutation,
 } from '../hooks';
 import { useMovementsQuery } from '@/modules/movements/hooks';
 import type { MovementResponse, MovementStatus } from '@/modules/movements/types';
@@ -216,6 +218,7 @@ function PendingTab({ clienteId, competencia, polling }: Props & { polling?: boo
   const confirmBatch = useConfirmBatchMutation();
   const rejectBatch = useRejectBatchMutation();
   const optimize = useOptimizeReconciliationMutation();
+  const aiSweep = useStartAiSweepMutation();
   const [manual, setManual] = useState<ReconciliationResponse | null>(null);
   const [grupo, setGrupo] = useState<ReconciliationResponse | null>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -223,6 +226,8 @@ function PendingTab({ clienteId, competencia, polling }: Props & { polling?: boo
 
   const items = query.data?.content ?? [];
   const matched = items.filter((i) => i.matchedMovementId);
+  // Pendencias sem correspondencia automatica: candidatas a validacao por IA.
+  const semMatch = items.filter((i) => !i.matchedMovementId).length;
 
   const contaFor = (item: ReconciliationResponse): string | null =>
     contaByItem[item.id] ?? item.sugestao?.contaId ?? null;
@@ -306,6 +311,17 @@ function PendingTab({ clienteId, competencia, polling }: Props & { polling?: boo
               Otimizar
             </Button>
           )}
+          <Button
+            size="small"
+            variant="text"
+            color="secondary"
+            startIcon={<AutoAwesomeIcon />}
+            disabled={aiSweep.isPending || semMatch === 0}
+            onClick={() => aiSweep.mutate({ clienteId, competencia })}
+            title="Varre por IA as pendências sem correspondência automática (assíncrono; acompanhe no canto inferior direito)"
+          >
+            Validar {semMatch > 0 ? `${semMatch} ` : ''}com IA
+          </Button>
           {selected.size > 0 && (
             <>
               <Button size="small" color="error" startIcon={<CloseIcon />} disabled={busy} onClick={rejectSelected}>

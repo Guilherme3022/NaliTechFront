@@ -63,6 +63,23 @@ export interface AiSweepJob {
   concluidoEm: string | null;
 }
 
+export interface BatchConfirmItem {
+  id: string;
+  contaSugerida?: string | null;
+}
+
+export interface SummaryLine {
+  status: ReconciliationStatus;
+  quantidade: number;
+  valorTotal: number;
+}
+
+export interface ReconciliationSummary {
+  total: number;
+  valorTotal: number;
+  porStatus: SummaryLine[];
+}
+
 // Conciliacao como lote/processo mensal (spec secoes 9-12).
 export type ConciliacaoSituacao =
   | 'RASCUNHO'
