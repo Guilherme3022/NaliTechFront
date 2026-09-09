@@ -1,23 +1,11 @@
-import { useState } from 'react';
-import {
-  Alert,
-  Box,
-  Button,
-  Card,
-  CardContent,
-  Stack,
-  Tab,
-  Tabs,
-} from '@mui/material';
+import { Alert } from '@mui/material';
 import { useAllAccountsQuery } from '@/modules/accounts/hooks';
 import CheckIcon from '@mui/icons-material/Check';
 import CloseIcon from '@mui/icons-material/Close';
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import ReplayIcon from '@mui/icons-material/Replay';
 import { PageHeader } from '@/shared/components/PageHeader';
-import { LoadingState, ErrorState, EmptyState } from '@/shared/components/states';
-import { DataTable, type Column } from '@/shared/components/DataTable';
-import { usePagination } from '@/shared/hooks/usePagination';
+import { EmptyState } from '@/shared/components/states';
 import { useActiveClient, useActiveCompetence } from '@/shared/lib/activeSelection';
 import {
   useConfirmReconciliationMutation,
@@ -31,11 +19,11 @@ import { ReconciliationSplitView } from '../components/ReconciliationSplitView';
 import { ManualMatchModal } from '../components/ManualMatchModal';
 import { MatchStatusBadge } from '../components/MatchStatusBadge';
 import { ConciliacaoCards } from '../components/ConciliacaoCards';
-import type { ReconciliationResponse } from '../types';
+import { ReconciliationReview } from '../components/ReconciliationReview';
 
 export function ReconciliationPage() {
-  const [tab, setTab] = useState(0);
   const clienteId = useActiveClient();
+  const competencia = useActiveCompetence() ?? undefined;
   const accountsQuery = useAllAccountsQuery();
   // EB: cliente tem plano se houver conta especifica dele ou compartilhada (clienteId nulo).
   const semPlano =
@@ -44,6 +32,7 @@ export function ReconciliationPage() {
     !(accountsQuery.data?.content ?? []).some(
       (a) => a.clienteId === clienteId || a.clienteId === null,
     );
+
   return (
     <>
       <PageHeader title="Conciliação" subtitle="Extrato x sistema" />
@@ -61,13 +50,7 @@ export function ReconciliationPage() {
             </Alert>
           )}
           <ConciliacaoCards />
-          <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 2 }}>
-            <Tabs value={tab} onChange={(_, v) => setTab(v)}>
-              <Tab label="Pendentes" />
-              <Tab label="Histórico" />
-            </Tabs>
-          </Box>
-          {tab === 0 ? <PendingTab /> : <HistoryTab />}
+          <ReconciliationReview clienteId={clienteId} competencia={competencia} />
         </>
       )}
     </>

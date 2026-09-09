@@ -1,5 +1,26 @@
 export type ReconciliationStatus = 'PENDENTE' | 'CONFIRMADO' | 'REJEITADO';
 
+// Dados reais de uma movimentação (extrato ou correspondência) para conferência visual.
+export interface MovementView {
+  id: string;
+  data: string | null;
+  valor: number | null;
+  descricao: string | null;
+  documento: string | null;
+  banco: string | null;
+  tipo: 'ENTRADA' | 'SAIDA' | null;
+  status: string | null;
+}
+
+// Conta sugerida para o item, já com código/nome legíveis.
+export interface SugestaoView {
+  contaId: string;
+  codigo: string | null;
+  nome: string | null;
+  confianca: number | null;
+  origem: string | null;
+}
+
 export interface ReconciliationResponse {
   id: string;
   clienteId: string | null;
@@ -10,6 +31,11 @@ export interface ReconciliationResponse {
   camada: string | null;
   score: number | null;
   motivo: string | null;
+  movimento: MovementView | null;
+  correspondencia: MovementView | null;
+  sugestao: SugestaoView | null;
+  // Pareamento N:1: movimentações do sistema agrupadas contra o extrato.
+  agrupamento: MovementView[] | null;
 }
 
 export interface ConfirmRequest {
@@ -55,6 +81,8 @@ export interface ConciliacaoResponse {
   competencia: string;
   perfilId: string | null;
   situacao: ConciliacaoSituacao;
+  // true enquanto houver arquivo anexado ainda em processamento (upload nao finalizado).
+  processando: boolean;
 }
 
 export interface CreateConciliacaoRequest {

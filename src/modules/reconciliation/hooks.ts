@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { PageParams } from '@/shared/types';
 import { notifyInfo, notifySuccess } from '@/shared/lib/notify';
+import { notifyInfo, notifySuccess } from '@/shared/lib/notify';
 import { conciliacoesApi, reconciliationApi, reconciliationProfilesApi } from './api';
 import type {
   AiSweepJob,
@@ -55,12 +56,25 @@ export function useDeleteProfileMutation() {
   });
 }
 
+// Um lote esta "processando" enquanto tiver arquivo anexado ainda nao finalizado
+// (o backend calcula isso a partir do status do upload e devolve em `processando`).
+// Enquanto houver algum lote nesse estado vale a pena fazer polling para as telas se
+// atualizarem sozinhas; fora disso, nao precisamos ficar chamando.
+export function isConciliacaoProcessing(
+  conciliacoes: { processando?: boolean }[] | undefined,
+): boolean {
+  return (conciliacoes ?? []).some((c) => c.processando);
+}
+
 // Lotes de conciliacao (cards) por cliente/competencia.
+// So fica em polling enquanto algum lote esta processando; assim que todos
+// estabilizam, para de refazer a chamada sozinho.
 export function useConciliacoesQuery(params: { clienteId?: string; competencia?: string }) {
   return useQuery({
     queryKey: [CONCILIACOES_KEY, params],
     queryFn: () => conciliacoesApi.list(params),
     enabled: !!params.clienteId,
+    refetchInterval: (query) => (isConciliacaoProcessing(query.state.data) ? 4000 : false),
   });
 }
 
@@ -89,8 +103,16 @@ export function useAttachUploadMutation() {
     mutationFn: ({ id, uploadId }: { id: string; uploadId: string }) =>
       conciliacoesApi.attachUpload(id, uploadId),
     onSuccess: () => {
-      notifySuccess('Arquivo anexado à conciliação.');
+      // Avisa imediatamente que o processamento (OCR/parse/normalizacao/match) e
+      // assincrono e pode demorar — o usuario nao precisa esperar parado na tela.
+      notifyInfo(
+        'Arquivo anexado. O processamento pode levar alguns minutos — os lançamentos ' +
+          'aparecerão aqui automaticamente quando ficarem prontos.',
+      );
       qc.invalidateQueries({ queryKey: [CONCILIACOES_KEY] });
+      // O processamento (OCR/parse/match) e assincrono; invalida as listas de itens
+      // para elas voltarem a buscar assim que as movimentacoes forem geradas.
+      qc.invalidateQueries({ queryKey: [KEY] });
     },
   });
 }
@@ -118,10 +140,20 @@ export function useCancelarConciliacaoMutation() {
 }
 
 // E8.5 — hooks de conciliação.
+// Faz polling: o pipeline (OCR/parse/normalizacao/match) roda de forma assincrona no
+// backend, entao os itens aparecem alguns segundos apos anexar o arquivo — sem precisar
+// sair e voltar da tela.
 export function usePendingReconciliationsQuery(
   params: PageParams & { clienteId?: string; competencia?: string },
+  options?: { polling?: boolean },
 ) {
-  return useQuery({ queryKey: [KEY, 'pending', params], queryFn: () => reconciliationApi.pending(params) });
+  return useQuery({
+    queryKey: [KEY, 'pending', params],
+    queryFn: () => reconciliationApi.pending(params),
+    // So faz polling enquanto o pipeline esta processando; caso contrario o cache e
+    // atualizado por foco de janela e pelas mutations (confirmar/rejeitar/anexar).
+    refetchInterval: options?.polling ? 5000 : false,
+  });
 }
 
 export function useReconciliationHistoryQuery(

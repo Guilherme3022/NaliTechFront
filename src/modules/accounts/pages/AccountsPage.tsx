@@ -54,6 +54,7 @@ export function AccountsPage() {
   const previewChart = usePreviewChartMutation();
   const fileRef = useRef<HTMLInputElement | null>(null);
   const [previewItems, setPreviewItems] = useState<ChartImportPreviewItem[]>([]);
+  const [previewFile, setPreviewFile] = useState<File | null>(null);
   const [previewOpen, setPreviewOpen] = useState(false);
 
   const handleImport = (e: ChangeEvent<HTMLInputElement>) => {
@@ -68,6 +69,7 @@ export function AccountsPage() {
               return;
             }
             setPreviewItems(items);
+            setPreviewFile(file);
             setPreviewOpen(true);
           },
         },
@@ -104,6 +106,7 @@ export function AccountsPage() {
         open={previewOpen}
         clienteId={clienteId}
         items={previewItems}
+        file={previewFile}
         onClose={() => setPreviewOpen(false)}
       />
       <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 2 }}>
@@ -486,13 +489,56 @@ function ChartTab() {
       key: 'codigo',
       label: 'Código',
       render: (a) => (
-        <span style={{ paddingLeft: a.parentId ? 24 : 0, fontWeight: a.parentId ? 400 : 600 }}>
-          {a.codigo}
-        </span>
+        <Box sx={{ pl: a.parentId ? 3 : 0 }}>
+          <span style={{ fontWeight: a.parentId ? 400 : 600 }}>{a.codigo}</span>
+          {a.codigoOriginal && a.codigoOriginal !== a.codigo && (
+            <Tooltip title="Código completo (reduzido + classificação) como veio no arquivo">
+              <Typography
+                variant="caption"
+                color="text.secondary"
+                display="block"
+                sx={{ fontFamily: 'monospace' }}
+              >
+                {a.codigoOriginal}
+              </Typography>
+            </Tooltip>
+          )}
+        </Box>
       ),
     },
     { key: 'nome', label: 'Nome' },
-    { key: 'tipo', label: 'Tipo', render: (a) => a.tipo ?? '—' },
+    {
+      key: 'tipo',
+      label: 'Tipo',
+      render: (a) =>
+        a.analitica === true ? (
+          <Tooltip title="Analítica">
+            <Chip size="small" label="A" color="success" variant="outlined" />
+          </Tooltip>
+        ) : a.analitica === false ? (
+          <Tooltip title="Sintética">
+            <Chip size="small" label="S" variant="outlined" />
+          </Tooltip>
+        ) : (
+          '—'
+        ),
+    },
+    {
+      key: 'natureza',
+      label: 'Natureza',
+      render: (a) =>
+        a.naturezaSaldo === 'DEVEDORA' ? (
+          <Tooltip title="Devedora (débito)">
+            <Chip size="small" label="D" color="error" variant="outlined" />
+          </Tooltip>
+        ) : a.naturezaSaldo === 'CREDORA' ? (
+          <Tooltip title="Credora (crédito)">
+            <Chip size="small" label="C" color="success" variant="outlined" />
+          </Tooltip>
+        ) : (
+          '—'
+        ),
+    },
     {
       key: 'actions',
       label: 'Ações',

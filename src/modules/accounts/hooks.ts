@@ -69,6 +69,18 @@ export function useAllAccountsQuery() {
   });
 }
 
+// Contas lançáveis (analíticas) de um cliente, para o seletor de conta da conciliação.
+// Sem cliente selecionado, cai numa listagem geral (compat).
+export function useLancaveisAccountsQuery(clienteId: string | null) {
+  return useQuery({
+    queryKey: [CHART, 'lancaveis', clienteId],
+    queryFn: () =>
+      clienteId
+        ? accountsApi.lancaveis(clienteId)
+        : accountsApi.chart({ page: 0, size: 500 }).then((p) => p.content),
+  });
+}
+
 export function useCreateChartAccountMutation() {
   const qc = useQueryClient();
   return useMutation({

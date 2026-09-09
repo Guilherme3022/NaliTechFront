@@ -13,8 +13,10 @@ import { AccountSelect } from '@/modules/accounts/components/AccountSelect';
 import { useConfirmReconciliationMutation } from '../hooks';
 import type { ReconciliationResponse } from '../types';
 
-// Revisão manual (E8.3): quando não há sugestão, o usuário escolhe a conta
-// contábil e confirma manualmente a conciliação.
+// Classificar direto (sem vínculo com o sistema): usado quando a linha do extrato
+// NÃO tem um correspondente em contas a pagar/receber (ex.: tarifa bancária, imposto,
+// transferência própria). O contador só escolhe a conta contábil e confirma — o
+// lançamento é gerado do mesmo jeito, sem precisar casar com nada.
 export function ManualMatchModal({
   item,
   onClose,
@@ -27,12 +29,13 @@ export function ManualMatchModal({
 
   return (
     <Dialog open={!!item} onClose={onClose} maxWidth="sm" fullWidth>
-      <DialogTitle>Conciliação manual</DialogTitle>
+      <DialogTitle>Classificar direto (sem vínculo)</DialogTitle>
       <DialogContent>
         <Stack spacing={2} sx={{ mt: 1 }}>
           {item?.motivo && <Alert severity="info">{item.motivo}</Alert>}
           <Typography variant="body2" color="text.secondary">
-            Movimentação {item?.movementId.slice(0, 8)} — selecione a conta contábil para conciliar.
+            Use quando esta linha do extrato não tem correspondente no sistema (tarifa, imposto,
+            transferência…). Selecione a conta contábil e confirme — o lançamento é gerado assim mesmo.
           </Typography>
           <AccountSelect value={contaId} onChange={setContaId} />
         </Stack>

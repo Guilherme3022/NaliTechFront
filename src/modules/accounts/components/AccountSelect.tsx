@@ -1,5 +1,6 @@
 import { Autocomplete, TextField } from '@mui/material';
-import { useAllAccountsQuery } from '../hooks';
+import { useActiveClient } from '@/shared/lib/activeSelection';
+import { useLancaveisAccountsQuery } from '../hooks';
 import type { ChartAccountResponse } from '../types';
 
 interface Props {
@@ -10,9 +11,12 @@ interface Props {
 }
 
 // Select de conta contábil reutilizado em conciliação e classificação.
+// Só oferece contas ANALÍTICAS (lançáveis) do cliente ativo — contas sintéticas
+// (agrupadoras) nunca recebem lançamento, então não aparecem aqui.
 export function AccountSelect({ value, onChange, label = 'Conta contábil', size = 'small' }: Props) {
-  const { data, isLoading } = useAllAccountsQuery();
-  const options = data?.content ?? [];
+  const clienteId = useActiveClient();
+  const { data, isLoading } = useLancaveisAccountsQuery(clienteId);
+  const options = data ?? [];
   const selected = options.find((o) => o.id === value) ?? null;
 
   return (

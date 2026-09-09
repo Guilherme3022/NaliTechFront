@@ -14,12 +14,16 @@ export function useUploadFileMutation() {
     mutationFn: ({
       file,
       clienteId,
+      origem,
+      bankAccountId,
       onProgress,
     }: {
       file: File;
       clienteId?: string;
+      origem?: 'EXTRATO' | 'SISTEMA';
+      bankAccountId?: string;
       onProgress?: (pct: number) => void;
-    }) => uploadsApi.upload(file, clienteId, onProgress),
+    }) => uploadsApi.upload(file, clienteId, origem, bankAccountId, onProgress),
     onSuccess: () => qc.invalidateQueries({ queryKey: [KEY] }),
   });
 }
@@ -69,7 +73,13 @@ export function useDeleteUploadMutation() {
     mutationFn: (id: string) => uploadsApi.remove(id),
     onSuccess: () => {
       notifySuccess('Upload removido.');
+      // A exclusao remove em cascata movimentacoes e itens de conciliacao; atualiza
+      // as telas que dependem disso (conciliacao, movimentacoes e dashboard).
       qc.invalidateQueries({ queryKey: [KEY] });
+      qc.invalidateQueries({ queryKey: ['reconciliations'] });
+      qc.invalidateQueries({ queryKey: ['conciliacoes'] });
+      qc.invalidateQueries({ queryKey: ['movements'] });
+      qc.invalidateQueries({ queryKey: ['dashboard'] });
     },
   });
 }
