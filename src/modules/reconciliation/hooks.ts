@@ -1,8 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { PageParams } from '@/shared/types';
-import { notifySuccess } from '@/shared/lib/notify';
+import { notifyInfo, notifySuccess } from '@/shared/lib/notify';
 import { conciliacoesApi, reconciliationApi, reconciliationProfilesApi } from './api';
 import type {
+  AiSweepJob,
   ConfirmRequest,
   CreateConciliacaoRequest,
   ReconciliationProfileRequest,
@@ -148,6 +149,53 @@ export function useRejectReconciliationMutation() {
     onSuccess: () => {
       notifySuccess('Conciliação rejeitada.');
       qc.invalidateQueries({ queryKey: [KEY] });
+    },
+  });
+}
+
+// Reprocessa as pendências MANUAL aplicando regras novas (grátis, sem IA).
+export function useReprocessMutation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (params: { clienteId?: string; competencia?: string }) =>
+      reconciliationApi.reprocess(params),
+    onSuccess: (res) => {
+      notifySuccess(
+        res.reprocessados === 0
+          ? 'Nenhuma pendência para reprocessar.'
+          : `Reprocessadas ${res.reprocessados} — ${res.resolvidos} conciliada(s).`,
+      );
+      qc.invalidateQueries({ queryKey: [KEY] });
+    },
+  });
+}
+
+// Dispara a varredura por IA das pendências MANUAL (assíncrona).
+export function useStartAiSweepMutation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (params: { clienteId?: string; competencia?: string }) =>
+      reconciliationApi.startAiSweep(params),
+    onSuccess: (job: AiSweepJob) => {
+      if (job.status === 'SEM_PENDENCIAS') {
+        notifyInfo('Não há pendências novas para a IA analisar.');
+      } else {
+        notifyInfo(`IA analisando ${job.total} pendência(s)…`);
+      }
+      qc.invalidateQueries({ queryKey: [KEY, 'ai-sweep', 'active'] });
+    },
+  });
+}
+
+// Jobs de IA ativos/recentes da empresa (para o popup). Faz polling enquanto
+// houver algum job EXECUTANDO; caso contrário, para (o start reativa via invalidate).
+export function useAiSweepActiveQuery() {
+  return useQuery({
+    queryKey: [KEY, 'ai-sweep', 'active'],
+    queryFn: () => reconciliationApi.aiSweepActive(),
+    refetchInterval: (query) => {
+      const data = query.state.data as AiSweepJob[] | undefined;
+      return data?.some((j) => j.status === 'EXECUTANDO') ? 2000 : false;
     },
   });
 }

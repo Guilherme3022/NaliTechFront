@@ -16,6 +16,27 @@ export interface ConfirmRequest {
   contaSugerida?: string;
 }
 
+// Reprocessamento das pendencias MANUAL (so camadas algoritmicas, sem IA).
+export interface ReprocessResponse {
+  reprocessados: number;
+  resolvidos: number;
+}
+
+// Varredura por IA (sweep) das pendencias MANUAL — assincrona, com progresso.
+export type AiSweepStatus = 'EXECUTANDO' | 'CONCLUIDO' | 'ERRO' | 'SEM_PENDENCIAS';
+
+export interface AiSweepJob {
+  jobId: string;
+  status: AiSweepStatus;
+  total: number;
+  processados: number;
+  resolvidos: number;
+  clienteId: string | null;
+  competencia: string | null;
+  iniciadoEm: string;
+  concluidoEm: string | null;
+}
+
 // Conciliacao como lote/processo mensal (spec secoes 9-12).
 export type ConciliacaoSituacao =
   | 'RASCUNHO'

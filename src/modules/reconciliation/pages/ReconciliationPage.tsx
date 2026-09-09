@@ -12,6 +12,8 @@ import {
 import { useAllAccountsQuery } from '@/modules/accounts/hooks';
 import CheckIcon from '@mui/icons-material/Check';
 import CloseIcon from '@mui/icons-material/Close';
+import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
+import ReplayIcon from '@mui/icons-material/Replay';
 import { PageHeader } from '@/shared/components/PageHeader';
 import { LoadingState, ErrorState, EmptyState } from '@/shared/components/states';
 import { DataTable, type Column } from '@/shared/components/DataTable';
@@ -22,6 +24,8 @@ import {
   usePendingReconciliationsQuery,
   useReconciliationHistoryQuery,
   useRejectReconciliationMutation,
+  useReprocessMutation,
+  useStartAiSweepMutation,
 } from '../hooks';
 import { ReconciliationSplitView } from '../components/ReconciliationSplitView';
 import { ManualMatchModal } from '../components/ManualMatchModal';
@@ -77,6 +81,8 @@ function PendingTab() {
   const query = usePendingReconciliationsQuery({ page, size, clienteId, competencia });
   const confirm = useConfirmReconciliationMutation();
   const reject = useRejectReconciliationMutation();
+  const reprocess = useReprocessMutation();
+  const aiSweep = useStartAiSweepMutation();
   const [manual, setManual] = useState<ReconciliationResponse | null>(null);
 
   const items = query.data?.content ?? [];
@@ -99,15 +105,39 @@ function PendingTab() {
       />
     );
 
+  const semMatch = items.filter((i) => !i.matchedMovementId).length;
+
   return (
     <>
-      {suggested.length > 0 && (
-        <Box sx={{ mb: 2, textAlign: 'right' }}>
+      <Stack
+        direction={{ xs: 'column', sm: 'row' }}
+        spacing={1}
+        justifyContent="flex-end"
+        sx={{ mb: 2 }}
+      >
+        <Button
+          variant="outlined"
+          startIcon={<ReplayIcon />}
+          disabled={reprocess.isPending}
+          onClick={() => reprocess.mutate({ clienteId, competencia })}
+        >
+          Reprocessar regras
+        </Button>
+        <Button
+          variant="outlined"
+          color="secondary"
+          startIcon={<AutoAwesomeIcon />}
+          disabled={aiSweep.isPending || semMatch === 0}
+          onClick={() => aiSweep.mutate({ clienteId, competencia })}
+        >
+          Validar {semMatch > 0 ? `${semMatch} ` : ''}pendências com IA
+        </Button>
+        {suggested.length > 0 && (
           <Button variant="contained" startIcon={<CheckIcon />} disabled={confirm.isPending} onClick={confirmAll}>
             Confirmar {suggested.length} sugeridas
           </Button>
-        </Box>
-      )}
+        )}
+      </Stack>
       <Stack spacing={2}>
         {items.map((item) => (
           <Card key={item.id} variant="outlined">

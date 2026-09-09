@@ -1,13 +1,17 @@
 import { api } from '@/shared/lib/api';
 import type { Page, PageParams } from '@/shared/types';
 import type {
+  AiSweepJob,
   ConciliacaoResponse,
   ConfirmRequest,
   CreateConciliacaoRequest,
   ReconciliationProfileRequest,
   ReconciliationProfileResponse,
   ReconciliationResponse,
+  ReprocessResponse,
 } from './types';
+
+type ReconFilter = { clienteId?: string; competencia?: string };
 
 export const reconciliationApi = {
   pending: (params: PageParams & { clienteId?: string; competencia?: string }) =>
@@ -18,6 +22,16 @@ export const reconciliationApi = {
     api.post<ReconciliationResponse>(`/reconciliations/${id}/confirm`, body).then((r) => r.data),
   reject: (id: string) =>
     api.post<ReconciliationResponse>(`/reconciliations/${id}/reject`).then((r) => r.data),
+  // Reprocessa as pendencias MANUAL aplicando regras novas (sem IA).
+  reprocess: (params: ReconFilter) =>
+    api.post<ReprocessResponse>('/reconciliations/reprocess', null, { params }).then((r) => r.data),
+  // Varredura por IA (assincrona) das pendencias MANUAL.
+  startAiSweep: (params: ReconFilter) =>
+    api.post<AiSweepJob>('/reconciliations/ai-sweep', null, { params }).then((r) => r.data),
+  aiSweepStatus: (jobId: string) =>
+    api.get<AiSweepJob>(`/reconciliations/ai-sweep/${jobId}`).then((r) => r.data),
+  aiSweepActive: () =>
+    api.get<AiSweepJob[]>('/reconciliations/ai-sweep').then((r) => r.data),
 };
 
 // Conciliacao como lote/processo mensal (spec secoes 9-12).

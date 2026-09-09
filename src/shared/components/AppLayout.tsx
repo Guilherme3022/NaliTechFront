@@ -36,6 +36,7 @@ import LogoutIcon from '@mui/icons-material/Logout';
 import PersonIcon from '@mui/icons-material/Person';
 import { useAuth } from '@/modules/auth/AuthContext';
 import type { RoleName } from '@/modules/auth/types';
+import { AiSweepPopup } from '@/modules/reconciliation/components/AiSweepPopup';
 import { CompanySwitcher } from './CompanySwitcher';
 import { ClientCompetenceSwitcher } from './ClientCompetenceSwitcher';
 
@@ -184,6 +185,9 @@ export function AppLayout() {
         <Toolbar />
         <Outlet />
       </Box>
+
+      {/* Popup global das varreduras por IA (sobrevive a navegacao entre telas). */}
+      <AiSweepPopup />
     </Box>
   );
 }
