@@ -130,6 +130,7 @@ function MovStatusChip({ status }: { status: MovementStatus }) {
     CONCILIACAO_PENDENTE: { label: 'Em conciliação', color: 'info' },
     CONCILIADO: { label: 'Conciliado', color: 'success' },
     CLASSIFICADO: { label: 'Classificado', color: 'success' },
+    IGNORADO: { label: 'Dispensado', color: 'default' },
   };
   const s = mapa[status];
   return <Chip size="small" variant="outlined" color={s.color} label={s.label} />;

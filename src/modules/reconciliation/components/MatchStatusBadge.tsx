@@ -38,6 +38,7 @@ export function MatchStatusBadge({ item }: { item: ReconciliationResponse }) {
     CONFIRMADO: { label: 'Confirmado', color: 'success' },
     PENDENTE: { label: 'Pendente', color: 'default' },
     REJEITADO: { label: 'Rejeitado', color: 'error' },
+    DISPENSADO: { label: 'Dispensado', color: 'default' },
   };
   const { label, color } = map[item.status];
   return <Chip size="small" label={label} color={color} variant="outlined" />;
