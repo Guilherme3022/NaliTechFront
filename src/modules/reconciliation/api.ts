@@ -1,7 +1,6 @@
 import { api } from '@/shared/lib/api';
 import type { Page, PageParams } from '@/shared/types';
 import type {
-  AiSweepJob,
   BatchConfirmItem,
   ConciliacaoResponse,
   ConfirmRequest,
@@ -14,6 +13,17 @@ import type {
 } from './types';
 
 type ReconFilter = { clienteId?: string; competencia?: string };
+
+// Opcoes de geracao do arquivo de lancamentos (TXT/CSV) para o sistema contabil.
+export type ExportParams = {
+  clienteId: string;
+  competencia: string;
+  formato?: 'TXT' | 'CSV';
+  somenteConciliados?: boolean;
+  separadorDecimal?: '.' | ',';
+  incluirCabecalho?: boolean;
+  incluirSaldoAnterior?: boolean;
+};
 
 export const reconciliationApi = {
   pending: (params: PageParams & { clienteId?: string; competencia?: string }) =>
@@ -30,6 +40,20 @@ export const reconciliationApi = {
       .then((r) => r.data),
   rejectBatch: (ids: string[]) =>
     api.post<ReconciliationResponse[]>('/reconciliations/reject-batch', { ids }).then((r) => r.data),
+  // "Nao conciliar": dispensa o item (sai da lista e nao volta).
+  dispensar: (id: string, motivo?: string) =>
+    api
+      .post<ReconciliationResponse>(`/reconciliations/${id}/dispensar`, { motivo })
+      .then((r) => r.data),
+  dispensarBatch: (ids: string[], motivo?: string) =>
+    api
+      .post<ReconciliationResponse[]>('/reconciliations/dispensar-batch', { ids, motivo })
+      .then((r) => r.data),
+  // Gera o arquivo de lancamentos a qualquer momento (nao exige conciliacao concluida).
+  export: (params: ExportParams) =>
+    api
+      .get('/reconciliations/export', { params, responseType: 'blob' })
+      .then((r) => r.data as Blob),
   summary: (params: { clienteId?: string; competencia?: string }) =>
     api.get<ReconciliationSummary>('/reconciliations/summary', { params }).then((r) => r.data),
   groupMatch: (id: string, movementIds: string[]) =>
@@ -38,16 +62,9 @@ export const reconciliationApi = {
       .then((r) => r.data),
   optimize: (params: { clienteId: string; competencia: string }) =>
     api.post('/reconciliations/optimize', null, { params }).then((r) => r.data),
-  // Reprocessa as pendencias MANUAL aplicando regras novas (sem IA).
+  // Reprocessa as pendencias MANUAL aplicando regras novas.
   reprocess: (params: ReconFilter) =>
     api.post<ReprocessResponse>('/reconciliations/reprocess', null, { params }).then((r) => r.data),
-  // Varredura por IA (assincrona) das pendencias MANUAL.
-  startAiSweep: (params: ReconFilter) =>
-    api.post<AiSweepJob>('/reconciliations/ai-sweep', null, { params }).then((r) => r.data),
-  aiSweepStatus: (jobId: string) =>
-    api.get<AiSweepJob>(`/reconciliations/ai-sweep/${jobId}`).then((r) => r.data),
-  aiSweepActive: () =>
-    api.get<AiSweepJob[]>('/reconciliations/ai-sweep').then((r) => r.data),
 };
 
 // Conciliacao como lote/processo mensal (spec secoes 9-12).

@@ -2,7 +2,8 @@ export type MovementStatus =
   | 'NORMALIZADO'
   | 'CONCILIACAO_PENDENTE'
   | 'CONCILIADO'
-  | 'CLASSIFICADO';
+  | 'CLASSIFICADO'
+  | 'IGNORADO';
 
 export interface MovementResponse {
   id: string;
@@ -19,6 +20,8 @@ export interface MovementResponse {
   status: MovementStatus;
 }
 
+export type MovementType = 'ENTRADA' | 'SAIDA';
+
 export interface UpdateMovementRequest {
   data?: string | null;
   valor?: number | null;
@@ -26,4 +29,6 @@ export interface UpdateMovementRequest {
   documento?: string | null;
   contaDebitoId?: string | null;
   contaCreditoId?: string | null;
+  // Correcao manual de entrada/saida (quando o OCR/parser erra a natureza).
+  tipo?: MovementType | null;
 }

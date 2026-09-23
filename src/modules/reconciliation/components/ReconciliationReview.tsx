@@ -21,13 +21,14 @@ import {
 } from '@mui/material';
 import CheckIcon from '@mui/icons-material/Check';
 import CloseIcon from '@mui/icons-material/Close';
-import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
+import DoDisturbIcon from '@mui/icons-material/DoDisturb';
+import DownloadIcon from '@mui/icons-material/Download';
 import { AccountSelect } from '@/modules/accounts/components/AccountSelect';
 import { LoadingState, ErrorState, EmptyState } from '@/shared/components/states';
 import { DataTable, type Column } from '@/shared/components/DataTable';
 import { usePagination } from '@/shared/hooks/usePagination';
 import { formatCurrency, formatDate } from '@/shared/lib/format';
-import { notifySuccess } from '@/shared/lib/notify';
+import { notifySuccess, notifyError } from '@/shared/lib/notify';
 import {
   isConciliacaoProcessing,
   useConciliacoesQuery,
@@ -39,8 +40,10 @@ import {
   useReconciliationSummaryQuery,
   useRejectBatchMutation,
   useRejectReconciliationMutation,
-  useStartAiSweepMutation,
+  useDispensarMutation,
+  useDispensarBatchMutation,
 } from '../hooks';
+import { reconciliationApi } from '../api';
 import { useMovementsQuery } from '@/modules/movements/hooks';
 import type { MovementResponse, MovementStatus } from '@/modules/movements/types';
 import { ReconciliationSplitView } from './ReconciliationSplitView';
@@ -218,7 +221,9 @@ function PendingTab({ clienteId, competencia, polling }: Props & { polling?: boo
   const confirmBatch = useConfirmBatchMutation();
   const rejectBatch = useRejectBatchMutation();
   const optimize = useOptimizeReconciliationMutation();
-  const aiSweep = useStartAiSweepMutation();
+  const dispensar = useDispensarMutation();
+  const dispensarBatch = useDispensarBatchMutation();
+  const [gerando, setGerando] = useState(false);
   const [manual, setManual] = useState<ReconciliationResponse | null>(null);
   const [grupo, setGrupo] = useState<ReconciliationResponse | null>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -226,8 +231,6 @@ function PendingTab({ clienteId, competencia, polling }: Props & { polling?: boo
 
   const items = query.data?.content ?? [];
   const matched = items.filter((i) => i.matchedMovementId);
-  // Pendencias sem correspondencia automatica: candidatas a validacao por IA.
-  const semMatch = items.filter((i) => !i.matchedMovementId).length;
 
   const contaFor = (item: ReconciliationResponse): string | null =>
     contaByItem[item.id] ?? item.sugestao?.contaId ?? null;
@@ -245,7 +248,12 @@ function PendingTab({ clienteId, competencia, polling }: Props & { polling?: boo
     setSelected(allSelected ? new Set() : new Set(matched.map((i) => i.id)));
 
   const busy =
-    confirm.isPending || reject.isPending || confirmBatch.isPending || rejectBatch.isPending;
+    confirm.isPending ||
+    reject.isPending ||
+    confirmBatch.isPending ||
+    rejectBatch.isPending ||
+    dispensar.isPending ||
+    dispensarBatch.isPending;
 
   const confirmSelected = async () => {
     const itens = [...selected].map((id) => {
@@ -259,6 +267,33 @@ function PendingTab({ clienteId, competencia, polling }: Props & { polling?: boo
   const rejectSelected = async () => {
     await rejectBatch.mutateAsync([...selected]);
     setSelected(new Set());
+  };
+
+  const dispensarSelected = async () => {
+    await dispensarBatch.mutateAsync({ ids: [...selected] });
+    setSelected(new Set());
+  };
+
+  // Gera o TXT de lancamentos a qualquer momento e dispara o download no navegador.
+  const gerarTxt = async () => {
+    if (!competencia) return;
+    setGerando(true);
+    try {
+      const blob = await reconciliationApi.export({ clienteId, competencia, formato: 'TXT' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `lancamentos-${competencia}.txt`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      notifySuccess('Arquivo TXT gerado.');
+    } catch {
+      notifyError('Não foi possível gerar o arquivo.');
+    } finally {
+      setGerando(false);
+    }
   };
 
   if (query.isLoading) return <LoadingState rows={4} />;
@@ -311,19 +346,30 @@ function PendingTab({ clienteId, competencia, polling }: Props & { polling?: boo
               Otimizar
             </Button>
           )}
-          <Button
-            size="small"
-            variant="text"
-            color="secondary"
-            startIcon={<AutoAwesomeIcon />}
-            disabled={aiSweep.isPending || semMatch === 0}
-            onClick={() => aiSweep.mutate({ clienteId, competencia })}
-            title="Varre por IA as pendências sem correspondência automática (assíncrono; acompanhe no canto inferior direito)"
-          >
-            Validar {semMatch > 0 ? `${semMatch} ` : ''}com IA
-          </Button>
+          {competencia && (
+            <Button
+              size="small"
+              variant="outlined"
+              startIcon={<DownloadIcon />}
+              disabled={gerando}
+              onClick={gerarTxt}
+              title="Gera o arquivo TXT de lançamentos desta competência para lançar no sistema contábil"
+            >
+              Gerar TXT
+            </Button>
+          )}
           {selected.size > 0 && (
             <>
+              <Button
+                size="small"
+                color="warning"
+                startIcon={<DoDisturbIcon />}
+                disabled={busy}
+                onClick={dispensarSelected}
+                title="Marca os itens selecionados como 'não precisa conciliar' (saem da lista)"
+              >
+                Não conciliar {selected.size}
+              </Button>
               <Button size="small" color="error" startIcon={<CloseIcon />} disabled={busy} onClick={rejectSelected}>
                 Rejeitar {selected.size}
               </Button>
@@ -399,6 +445,16 @@ function PendingTab({ clienteId, competencia, polling }: Props & { polling?: boo
                   <>
                     <Button
                       size="small"
+                      color="warning"
+                      startIcon={<DoDisturbIcon />}
+                      disabled={busy}
+                      onClick={() => dispensar.mutate({ id: item.id })}
+                      title="Não precisa conciliar: remove este item da lista"
+                    >
+                      Não conciliar
+                    </Button>
+                    <Button
+                      size="small"
                       color="error"
                       startIcon={<CloseIcon />}
                       disabled={busy}
@@ -425,6 +481,16 @@ function PendingTab({ clienteId, competencia, polling }: Props & { polling?: boo
                     </Button>
                     <Button size="small" variant="text" onClick={() => setManual(item)}>
                       Classificar direto
+                    </Button>
+                    <Button
+                      size="small"
+                      color="warning"
+                      startIcon={<DoDisturbIcon />}
+                      disabled={busy}
+                      onClick={() => dispensar.mutate({ id: item.id })}
+                      title="Não precisa conciliar: remove este item da lista"
+                    >
+                      Não conciliar
                     </Button>
                   </>
                 )}

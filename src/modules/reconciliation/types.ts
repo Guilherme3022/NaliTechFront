@@ -1,4 +1,4 @@
-export type ReconciliationStatus = 'PENDENTE' | 'CONFIRMADO' | 'REJEITADO';
+export type ReconciliationStatus = 'PENDENTE' | 'CONFIRMADO' | 'REJEITADO' | 'DISPENSADO';
 
 // Dados reais de uma movimentação (extrato ou correspondência) para conferência visual.
 export interface MovementView {
@@ -46,21 +46,6 @@ export interface ConfirmRequest {
 export interface ReprocessResponse {
   reprocessados: number;
   resolvidos: number;
-}
-
-// Varredura por IA (sweep) das pendencias MANUAL — assincrona, com progresso.
-export type AiSweepStatus = 'EXECUTANDO' | 'CONCLUIDO' | 'ERRO' | 'SEM_PENDENCIAS';
-
-export interface AiSweepJob {
-  jobId: string;
-  status: AiSweepStatus;
-  total: number;
-  processados: number;
-  resolvidos: number;
-  clienteId: string | null;
-  competencia: string | null;
-  iniciadoEm: string;
-  concluidoEm: string | null;
 }
 
 export interface BatchConfirmItem {

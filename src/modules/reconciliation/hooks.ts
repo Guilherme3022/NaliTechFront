@@ -3,7 +3,6 @@ import type { PageParams } from '@/shared/types';
 import { notifyInfo, notifySuccess } from '@/shared/lib/notify';
 import { conciliacoesApi, reconciliationApi, reconciliationProfilesApi } from './api';
 import type {
-  AiSweepJob,
   BatchConfirmItem,
   ConfirmRequest,
   CreateConciliacaoRequest,
@@ -263,32 +262,27 @@ export function useReprocessMutation() {
   });
 }
 
-// Dispara a varredura por IA das pendências MANUAL (assíncrona).
-export function useStartAiSweepMutation() {
+// "Não conciliar": dispensa um item (sai da lista e não volta).
+export function useDispensarMutation() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (params: { clienteId?: string; competencia?: string }) =>
-      reconciliationApi.startAiSweep(params),
-    onSuccess: (job: AiSweepJob) => {
-      if (job.status === 'SEM_PENDENCIAS') {
-        notifyInfo('Não há pendências novas para a IA analisar.');
-      } else {
-        notifyInfo(`IA analisando ${job.total} pendência(s)…`);
-      }
-      qc.invalidateQueries({ queryKey: [KEY, 'ai-sweep', 'active'] });
+    mutationFn: ({ id, motivo }: { id: string; motivo?: string }) =>
+      reconciliationApi.dispensar(id, motivo),
+    onSuccess: () => {
+      notifySuccess('Item dispensado.');
+      qc.invalidateQueries({ queryKey: [KEY] });
     },
   });
 }
 
-// Jobs de IA ativos/recentes da empresa (para o popup). Faz polling enquanto
-// houver algum job EXECUTANDO; caso contrário, para (o start reativa via invalidate).
-export function useAiSweepActiveQuery() {
-  return useQuery({
-    queryKey: [KEY, 'ai-sweep', 'active'],
-    queryFn: () => reconciliationApi.aiSweepActive(),
-    refetchInterval: (query) => {
-      const data = query.state.data as AiSweepJob[] | undefined;
-      return data?.some((j) => j.status === 'EXECUTANDO') ? 2000 : false;
+export function useDispensarBatchMutation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ ids, motivo }: { ids: string[]; motivo?: string }) =>
+      reconciliationApi.dispensarBatch(ids, motivo),
+    onSuccess: (res) => {
+      notifySuccess(`${res.length} item(ns) dispensado(s).`);
+      qc.invalidateQueries({ queryKey: [KEY] });
     },
   });
 }
