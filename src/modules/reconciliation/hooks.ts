@@ -127,6 +127,17 @@ export function useConcluirConciliacaoMutation() {
   });
 }
 
+export function useSetRecebeSistemaMutation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, valor }: { id: string; valor: boolean }) =>
+      conciliacoesApi.setRecebeSistema(id, valor),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: [CONCILIACOES_KEY] });
+    },
+  });
+}
+
 export function useCancelarConciliacaoMutation() {
   const qc = useQueryClient();
   return useMutation({

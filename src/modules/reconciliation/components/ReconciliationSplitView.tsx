@@ -45,9 +45,25 @@ function MovementCard({ label, mov }: { label: string; mov: MovementView | null 
 
 // Visão lado a lado: movimentação do extrato x movimentação do sistema,
 // com o indicador de match (score) ao centro.
-export function ReconciliationSplitView({ item }: { item: ReconciliationResponse }) {
+export function ReconciliationSplitView({
+  item,
+  recebeSistema = true,
+}: {
+  item: ReconciliationResponse;
+  recebeSistema?: boolean;
+}) {
   const scorePct =
     item.score != null ? Math.round(item.score <= 1 ? item.score * 100 : item.score) : null;
+
+  // Cliente so envia extrato: nao ha lado do sistema para casar; mostra so o extrato.
+  if (!recebeSistema) {
+    return (
+      <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} alignItems="center">
+        <MovementCard label="Extrato" mov={item.movimento} />
+      </Stack>
+    );
+  }
+
   return (
     <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} alignItems="center">
       <MovementCard label="Extrato" mov={item.movimento} />

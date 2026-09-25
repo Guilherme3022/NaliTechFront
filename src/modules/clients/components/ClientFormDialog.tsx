@@ -26,6 +26,10 @@ const schema = z.object({
   telefone: z.string().optional(),
   email: z.string().email('E-mail inválido').or(z.literal('')).optional(),
   status: z.enum(['ATIVO', 'INATIVO']),
+  codigoEmpresaContabil: z
+    .string()
+    .regex(/^\d*$/, 'Apenas números')
+    .optional(),
 });
 type FormValues = z.infer<typeof schema>;
 
@@ -43,7 +47,10 @@ export function ClientFormDialog({ open, client, onClose }: Props) {
   const { register, handleSubmit, control, reset, setValue, watch, formState: { errors } } =
     useForm<FormValues>({
       resolver: zodResolver(schema),
-      defaultValues: { nome: '', cnpjCpf: '', contato: '', telefone: '', email: '', status: 'ATIVO' },
+      defaultValues: {
+        nome: '', cnpjCpf: '', contato: '', telefone: '', email: '', status: 'ATIVO',
+        codigoEmpresaContabil: '',
+      },
     });
 
   useEffect(() => {
@@ -55,11 +62,14 @@ export function ClientFormDialog({ open, client, onClose }: Props) {
         telefone: client?.telefone ?? '',
         email: client?.email ?? '',
         status: client?.status ?? 'ATIVO',
+        codigoEmpresaContabil:
+          client?.codigoEmpresaContabil != null ? String(client.codigoEmpresaContabil) : '',
       });
     }
   }, [open, client, reset]);
 
   const onSubmit = handleSubmit(async (values) => {
+    const codigo = values.codigoEmpresaContabil ? Number(values.codigoEmpresaContabil) : null;
     if (isEdit && client) {
       await update.mutateAsync({
         id: client.id,
@@ -69,6 +79,7 @@ export function ClientFormDialog({ open, client, onClose }: Props) {
           telefone: values.telefone,
           email: values.email || undefined,
           status: values.status as ClientStatus,
+          codigoEmpresaContabil: codigo,
         },
       });
     } else {
@@ -78,6 +89,7 @@ export function ClientFormDialog({ open, client, onClose }: Props) {
         contato: values.contato,
         telefone: values.telefone,
         email: values.email || undefined,
+        codigoEmpresaContabil: codigo,
       });
     }
     onClose();
@@ -116,6 +128,16 @@ export function ClientFormDialog({ open, client, onClose }: Props) {
               error={!!errors.email}
               helperText={errors.email?.message}
               {...register('email')}
+            />
+            <TextField
+              label="Código da empresa contábil"
+              fullWidth
+              error={!!errors.codigoEmpresaContabil}
+              helperText={
+                errors.codigoEmpresaContabil?.message
+                ?? 'Usado como último campo do TXT de lançamentos'
+              }
+              {...register('codigoEmpresaContabil')}
             />
             {isEdit && (
               <Controller

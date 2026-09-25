@@ -8,10 +8,12 @@ import {
   Chip,
   Divider,
   FormControl,
+  FormControlLabel,
   InputLabel,
   MenuItem,
   Select,
   Stack,
+  Switch,
   Table,
   TableBody,
   TableCell,
@@ -40,6 +42,7 @@ import {
   useCancelarConciliacaoMutation,
   useConciliacaoQuery,
   useConcluirConciliacaoMutation,
+  useSetRecebeSistemaMutation,
 } from '../hooks';
 import { ReconciliationReview } from '../components/ReconciliationReview';
 
@@ -58,6 +61,7 @@ export function ConciliacaoDetailPage() {
   const uploadFile = useUploadFileMutation();
   const concluir = useConcluirConciliacaoMutation();
   const cancelar = useCancelarConciliacaoMutation();
+  const setRecebeSistema = useSetRecebeSistemaMutation();
   const fileInputs = useRef<Record<string, HTMLInputElement | null>>({});
   const [origem, setOrigem] = useState<OrigemDocumento>('EXTRATO');
   const [bankAccountId, setBankAccountId] = useState<string>('');
@@ -119,6 +123,18 @@ export function ConciliacaoDetailPage() {
           <Stack direction="row" spacing={2} alignItems="center" flexWrap="wrap">
             <Chip label={conciliacao.situacao} />
             <Typography variant="body2">Competência: {conciliacao.competencia}</Typography>
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={!conciliacao.recebeSistema}
+                  disabled={encerrada || setRecebeSistema.isPending}
+                  onChange={(e) =>
+                    setRecebeSistema.mutate({ id: conciliacao.id, valor: !e.target.checked })
+                  }
+                />
+              }
+              label="Não envia planilha de contas a pagar/receber"
+            />
             <Box sx={{ flex: 1 }} />
             {conciliacao.situacao === 'CONCLUIDA' ? (
               <>
@@ -159,7 +175,9 @@ export function ConciliacaoDetailPage() {
               onChange={(_, v: OrigemDocumento | null) => v && setOrigem(v)}
             >
               <ToggleButton value="EXTRATO">Extrato (banco)</ToggleButton>
-              <ToggleButton value="SISTEMA">Sistema (contas a pagar/receber)</ToggleButton>
+              {conciliacao.recebeSistema && (
+                <ToggleButton value="SISTEMA">Sistema (contas a pagar/receber)</ToggleButton>
+              )}
             </ToggleButtonGroup>
             {origem === 'EXTRATO' && bancosDoCliente.length > 0 && (
               <FormControl size="small" sx={{ minWidth: 220 }}>
@@ -184,8 +202,17 @@ export function ConciliacaoDetailPage() {
           </Stack>
           <FileDropzone onFiles={enviarEAnexar} />
           <Typography variant="caption" color="text.secondary">
-            A conciliação casa lançamentos do <b>extrato</b> com os do <b>sistema</b>. Envie os dois
-            lados para o mesmo cliente/competência.
+            {conciliacao.recebeSistema ? (
+              <>
+                A conciliação casa lançamentos do <b>extrato</b> com os do <b>sistema</b>. Envie os
+                dois lados para o mesmo cliente/competência.
+              </>
+            ) : (
+              <>
+                Este cliente envia <b>apenas o extrato</b>. Cada lançamento é classificado direto na
+                conta contábil (débito/crédito) na conciliação.
+              </>
+            )}
           </Typography>
         </Box>
       )}
@@ -279,9 +306,13 @@ export function ConciliacaoDetailPage() {
       <Divider sx={{ my: 3 }} />
 
       <Typography variant="h6" fontWeight={700} sx={{ mb: 1.5 }}>
-        Conciliação (extrato × sistema)
+        {conciliacao.recebeSistema ? 'Conciliação (extrato × sistema)' : 'Classificação (só extrato)'}
       </Typography>
-      <ReconciliationReview clienteId={conciliacao.clienteId} competencia={competenciaMes} />
+      <ReconciliationReview
+        clienteId={conciliacao.clienteId}
+        competencia={competenciaMes}
+        recebeSistema={conciliacao.recebeSistema}
+      />
     </>
   );
 }

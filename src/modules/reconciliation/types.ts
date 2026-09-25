@@ -10,6 +10,9 @@ export interface MovementView {
   banco: string | null;
   tipo: 'ENTRADA' | 'SAIDA' | null;
   status: string | null;
+  // Partida dobrada atual/sugerida (pre-preenche os seletores na tela de conciliacao).
+  contaDebitoId: string | null;
+  contaCreditoId: string | null;
 }
 
 // Conta sugerida para o item, já com código/nome legíveis.
@@ -40,6 +43,8 @@ export interface ReconciliationResponse {
 
 export interface ConfirmRequest {
   contaSugerida?: string;
+  contaDebitoId?: string | null;
+  contaCreditoId?: string | null;
 }
 
 // Reprocessamento das pendencias MANUAL (so camadas algoritmicas, sem IA).
@@ -51,6 +56,8 @@ export interface ReprocessResponse {
 export interface BatchConfirmItem {
   id: string;
   contaSugerida?: string | null;
+  contaDebitoId?: string | null;
+  contaCreditoId?: string | null;
 }
 
 export interface SummaryLine {
@@ -83,6 +90,8 @@ export interface ConciliacaoResponse {
   competencia: string;
   perfilId: string | null;
   situacao: ConciliacaoSituacao;
+  // false = cliente nao envia planilha do sistema (so extrato): a tela esconde o lado do sistema.
+  recebeSistema: boolean;
   // true enquanto houver arquivo anexado ainda em processamento (upload nao finalizado).
   processando: boolean;
 }
@@ -91,6 +100,7 @@ export interface CreateConciliacaoRequest {
   clienteId: string;
   competencia: string; // YYYY-MM
   perfilId?: string | null;
+  recebeSistema?: boolean;
 }
 
 // Perfil de Conciliacao (spec secao 8).

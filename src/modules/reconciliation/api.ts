@@ -79,6 +79,11 @@ export const conciliacoesApi = {
     api.post<ConciliacaoResponse>(`/conciliacoes/${id}/uploads/${uploadId}`).then((r) => r.data),
   concluir: (id: string) =>
     api.post<ConciliacaoResponse>(`/conciliacoes/${id}/concluir`).then((r) => r.data),
+  // Liga/desliga o recebimento da planilha do sistema (contas a pagar/receber).
+  setRecebeSistema: (id: string, valor: boolean) =>
+    api
+      .post<ConciliacaoResponse>(`/conciliacoes/${id}/recebe-sistema`, null, { params: { valor } })
+      .then((r) => r.data),
   cancelar: (id: string) =>
     api.post<ConciliacaoResponse>(`/conciliacoes/${id}/cancelar`).then((r) => r.data),
   download: (id: string, formato: string) =>

@@ -8,6 +8,7 @@ export interface ClientResponse {
   telefone: string | null;
   email: string | null;
   status: ClientStatus;
+  codigoEmpresaContabil: number | null;
 }
 
 export interface ClientDocumentResponse {
@@ -23,6 +24,7 @@ export interface CreateClientRequest {
   contato?: string;
   telefone?: string;
   email?: string;
+  codigoEmpresaContabil?: number | null;
 }
 
 export interface UpdateClientRequest {
@@ -31,4 +33,5 @@ export interface UpdateClientRequest {
   telefone?: string;
   email?: string;
   status: ClientStatus;
+  codigoEmpresaContabil?: number | null;
 }

@@ -2,10 +2,6 @@ import { useState } from 'react';
 import {
   Button,
   Chip,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
   IconButton,
   Stack,
   Table,
@@ -13,7 +9,6 @@ import {
   TableCell,
   TableHead,
   TableRow,
-  TextField,
 } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -21,8 +16,8 @@ import { PageHeader } from '@/shared/components/PageHeader';
 import { LoadingState, ErrorState, EmptyState } from '@/shared/components/states';
 import { usePagination } from '@/shared/hooks/usePagination';
 import { useActiveClient, useActiveCompetence } from '@/shared/lib/activeSelection';
-import { AccountSelect } from '@/modules/accounts/components/AccountSelect';
-import { useMovementsQuery, useUpdateMovementMutation, useDeleteMovementMutation } from '../hooks';
+import { MovementEditDialog } from '../components/MovementEditDialog';
+import { useMovementsQuery, useDeleteMovementMutation } from '../hooks';
 import type { MovementResponse } from '../types';
 
 const STATUS_COLOR: Record<string, 'default' | 'info' | 'warning' | 'success'> = {
@@ -112,85 +107,7 @@ export function MovementsPage() {
         </>
       )}
 
-      <EditMovementDialog movement={editing} onClose={() => setEditing(null)} />
+      <MovementEditDialog movement={editing} onClose={() => setEditing(null)} />
     </>
-  );
-}
-
-function EditMovementDialog({ movement, onClose }: { movement: MovementResponse | null; onClose: () => void }) {
-  const update = useUpdateMovementMutation();
-  const [form, setForm] = useState<MovementResponse | null>(movement);
-
-  // Sincroniza o form quando abre para editar outra linha.
-  if (movement && (!form || form.id !== movement.id)) {
-    setForm(movement);
-  }
-
-  if (!movement || !form) return null;
-
-  const salvar = () => {
-    update.mutate(
-      {
-        id: movement.id,
-        body: {
-          data: form.data,
-          valor: form.valor,
-          descricao: form.descricao,
-          documento: form.documento,
-          contaDebitoId: form.contaDebitoId,
-          contaCreditoId: form.contaCreditoId,
-        },
-      },
-      { onSuccess: onClose },
-    );
-  };
-
-  return (
-    <Dialog open={!!movement} onClose={onClose} fullWidth maxWidth="sm">
-      <DialogTitle>Editar movimentação</DialogTitle>
-      <DialogContent>
-        <Stack spacing={2} sx={{ mt: 1 }}>
-          <TextField
-            label="Data"
-            type="date"
-            InputLabelProps={{ shrink: true }}
-            value={form.data ?? ''}
-            onChange={(e) => setForm({ ...form, data: e.target.value || null })}
-          />
-          <TextField
-            label="Valor"
-            type="number"
-            value={form.valor ?? ''}
-            onChange={(e) => setForm({ ...form, valor: e.target.value === '' ? null : Number(e.target.value) })}
-          />
-          <TextField
-            label="Descrição"
-            value={form.descricao ?? ''}
-            onChange={(e) => setForm({ ...form, descricao: e.target.value })}
-          />
-          <TextField
-            label="Documento"
-            value={form.documento ?? ''}
-            onChange={(e) => setForm({ ...form, documento: e.target.value })}
-          />
-          <AccountSelect
-            label="Conta de débito"
-            value={form.contaDebitoId}
-            onChange={(id) => setForm({ ...form, contaDebitoId: id })}
-          />
-          <AccountSelect
-            label="Conta de crédito"
-            value={form.contaCreditoId}
-            onChange={(id) => setForm({ ...form, contaCreditoId: id })}
-          />
-        </Stack>
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={onClose}>Cancelar</Button>
-        <Button variant="contained" disabled={update.isPending} onClick={salvar}>
-          Salvar
-        </Button>
-      </DialogActions>
-    </Dialog>
   );
 }

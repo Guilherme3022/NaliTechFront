@@ -23,7 +23,9 @@ import CheckIcon from '@mui/icons-material/Check';
 import CloseIcon from '@mui/icons-material/Close';
 import DoDisturbIcon from '@mui/icons-material/DoDisturb';
 import DownloadIcon from '@mui/icons-material/Download';
+import EditIcon from '@mui/icons-material/Edit';
 import { AccountSelect } from '@/modules/accounts/components/AccountSelect';
+import { MovementEditDialog } from '@/modules/movements/components/MovementEditDialog';
 import { LoadingState, ErrorState, EmptyState } from '@/shared/components/states';
 import { DataTable, type Column } from '@/shared/components/DataTable';
 import { usePagination } from '@/shared/hooks/usePagination';
@@ -56,6 +58,8 @@ interface Props {
   clienteId: string;
   // competencia no formato "YYYY-MM" (opcional; sem ela lista todas do cliente).
   competencia?: string;
+  // false = cliente so envia extrato: esconde o lado do sistema.
+  recebeSistema?: boolean;
 }
 
 /**
@@ -63,7 +67,7 @@ interface Props {
  * resumo, pendentes (confirmar/rejeitar/manual/agrupar) e histórico. Reutilizado
  * tanto na tela geral de Conciliação quanto dentro do detalhe de um lote.
  */
-export function ReconciliationReview({ clienteId, competencia }: Props) {
+export function ReconciliationReview({ clienteId, competencia, recebeSistema = true }: Props) {
   const [tab, setTab] = useState(0);
   // Reaproveita o cache da lista de conciliacoes (mesma query dos cards) so para saber
   // se o pipeline ainda esta processando — e, com isso, ligar/desligar o polling.
@@ -111,7 +115,14 @@ export function ReconciliationReview({ clienteId, competencia }: Props) {
           <Tab label="Concluídas" />
         </Tabs>
       </Box>
-      {tab === 0 && <PendingTab clienteId={clienteId} competencia={competencia} polling={polling} />}
+      {tab === 0 && (
+        <PendingTab
+          clienteId={clienteId}
+          competencia={competencia}
+          polling={polling}
+          recebeSistema={recebeSistema}
+        />
+      )}
       {tab === 1 && (
         <MovementsSideTab clienteId={clienteId} competencia={competencia} origem="EXTRATO" />
       )}
@@ -214,7 +225,7 @@ function SummaryBar({ clienteId, competencia, polling }: Props & { polling?: boo
   );
 }
 
-function PendingTab({ clienteId, competencia, polling }: Props & { polling?: boolean }) {
+function PendingTab({ clienteId, competencia, polling, recebeSistema = true }: Props & { polling?: boolean }) {
   const { page, size, setPage, setSize } = usePagination(10);
   const query = usePendingReconciliationsQuery({ page, size, clienteId, competencia }, { polling });
   const confirm = useConfirmReconciliationMutation();
@@ -227,14 +238,19 @@ function PendingTab({ clienteId, competencia, polling }: Props & { polling?: boo
   const [gerando, setGerando] = useState(false);
   const [manual, setManual] = useState<ReconciliationResponse | null>(null);
   const [grupo, setGrupo] = useState<ReconciliationResponse | null>(null);
+  const [editMov, setEditMov] = useState<ReconciliationResponse | null>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
-  const [contaByItem, setContaByItem] = useState<Record<string, string | null>>({});
+  // Partida dobrada escolhida por item (default = a ja sugerida/gravada no movimento).
+  const [debitoByItem, setDebitoByItem] = useState<Record<string, string | null>>({});
+  const [creditoByItem, setCreditoByItem] = useState<Record<string, string | null>>({});
 
   const items = query.data?.content ?? [];
   const matched = items.filter((i) => i.matchedMovementId);
 
-  const contaFor = (item: ReconciliationResponse): string | null =>
-    contaByItem[item.id] ?? item.sugestao?.contaId ?? null;
+  const debitoFor = (item: ReconciliationResponse): string | null =>
+    item.id in debitoByItem ? debitoByItem[item.id] : item.movimento?.contaDebitoId ?? null;
+  const creditoFor = (item: ReconciliationResponse): string | null =>
+    item.id in creditoByItem ? creditoByItem[item.id] : item.movimento?.contaCreditoId ?? null;
 
   const toggle = (id: string) =>
     setSelected((prev) => {
@@ -258,8 +274,12 @@ function PendingTab({ clienteId, competencia, polling }: Props & { polling?: boo
 
   const confirmSelected = async () => {
     const itens = [...selected].map((id) => {
-      const item = items.find((i) => i.id === id);
-      return { id, contaSugerida: contaFor(item!) ?? undefined };
+      const item = items.find((i) => i.id === id)!;
+      return {
+        id,
+        contaDebitoId: debitoFor(item) ?? undefined,
+        contaCreditoId: creditoFor(item) ?? undefined,
+      };
     });
     await confirmBatch.mutateAsync(itens);
     setSelected(new Set());
@@ -419,14 +439,21 @@ function PendingTab({ clienteId, competencia, polling }: Props & { polling?: boo
                   <MatchStatusBadge item={item} />
                 </Stack>
               </Stack>
-              <ReconciliationSplitView item={item} />
+              <ReconciliationSplitView item={item} recebeSistema={recebeSistema} />
 
               <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} alignItems="center" sx={{ mt: 1.5 }}>
                 <Box sx={{ flex: 1, width: '100%' }}>
                   <AccountSelect
-                    label="Conta contábil (analítica)"
-                    value={contaFor(item)}
-                    onChange={(v) => setContaByItem((p) => ({ ...p, [item.id]: v }))}
+                    label="Conta débito"
+                    value={debitoFor(item)}
+                    onChange={(v) => setDebitoByItem((p) => ({ ...p, [item.id]: v }))}
+                  />
+                </Box>
+                <Box sx={{ flex: 1, width: '100%' }}>
+                  <AccountSelect
+                    label="Conta crédito"
+                    value={creditoFor(item)}
+                    onChange={(v) => setCreditoByItem((p) => ({ ...p, [item.id]: v }))}
                   />
                 </Box>
                 {item.sugestao && (
@@ -442,6 +469,9 @@ function PendingTab({ clienteId, competencia, polling }: Props & { polling?: boo
               </Stack>
 
               <Stack direction="row" spacing={1} justifyContent="flex-end" sx={{ mt: 1.5 }}>
+                <Button size="small" startIcon={<EditIcon />} disabled={busy} onClick={() => setEditMov(item)}>
+                  Editar movimentação
+                </Button>
                 {item.matchedMovementId ? (
                   <>
                     <Button
@@ -469,7 +499,13 @@ function PendingTab({ clienteId, competencia, polling }: Props & { polling?: boo
                       startIcon={<CheckIcon />}
                       disabled={busy}
                       onClick={() =>
-                        confirm.mutate({ id: item.id, body: { contaSugerida: contaFor(item) ?? undefined } })
+                        confirm.mutate({
+                          id: item.id,
+                          body: {
+                            contaDebitoId: debitoFor(item) ?? undefined,
+                            contaCreditoId: creditoFor(item) ?? undefined,
+                          },
+                        })
                       }
                     >
                       Confirmar
@@ -517,6 +553,11 @@ function PendingTab({ clienteId, competencia, polling }: Props & { polling?: boo
 
       <ManualMatchModal item={manual} onClose={() => setManual(null)} />
       <GroupMatchModal item={grupo} onClose={() => setGrupo(null)} />
+      <MovementEditDialog
+        movement={editMov?.movimento ?? null}
+        onClose={() => setEditMov(null)}
+        onSaved={() => query.refetch()}
+      />
     </>
   );
 }
